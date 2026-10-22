@@ -27,7 +27,9 @@ import {
   TrendingUp,
   Activity,
   Layers,
-  FileUp
+  FileUp,
+  CheckCircle2,
+  CalendarDays
 } from "lucide-react";
 
 // =========================================================================
@@ -123,6 +125,24 @@ const cleanId = (val) => String(val ?? "").trim().replace(/\.0$/, "");
 const formatINR = (val) => "₹" + Math.round(Number(val) || 0).toLocaleString("en-IN");
 const formatDec = (val, dec = 2) => (Number(val) || 0).toFixed(dec);
 
+const getMonthYearDisplay = (dateObj, fromDateStr) => {
+  if (dateObj && !isNaN(dateObj.getTime())) {
+    return dateObj.toLocaleDateString("en-US", { month: "long", year: "numeric" }).toUpperCase();
+  }
+  if (fromDateStr) {
+    const parts = fromDateStr.split(/[\/\-\.]/);
+    if (parts.length === 3) {
+      const monthIdx = Number(parts[1]) - 1;
+      const year = parts[0].length === 4 ? parts[0] : parts[2];
+      const monthNames = ["JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE", "JULY", "AUGUST", "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER"];
+      if (monthIdx >= 0 && monthIdx < 12) {
+        return `${monthNames[monthIdx]} ${year}`;
+      }
+    }
+  }
+  return "CURRENT PERIOD";
+};
+
 export default function App() {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [showInactive, setShowInactive] = useState(false);
@@ -159,8 +179,12 @@ export default function App() {
     toDate: "30/04/2026",
     totalDays: 30,
     sundaysCount: 4,
+    monthYear: "APRIL 2026",
     processedAt: new Date().toLocaleTimeString()
   });
+
+  // Confirmation Modal State after Upload
+  const [uploadConfirmation, setUploadConfirmation] = useState(null);
 
   const [parseLogs, setParseLogs] = useState([]);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -245,7 +269,7 @@ export default function App() {
       const ownTiffin = String(profile.ownTiffin || "").trim().toLowerCase() === "yes";
       const isBonusEligible = String(profile.bonusDays || "").trim().toLowerCase() === "yes";
 
-      // If Inactive: Strictly zero out financials
+      // Strict Exclusion Rule for Inactive Staff: 0 financial impact
       if (!isActive) {
         return {
           empId,
@@ -273,7 +297,7 @@ export default function App() {
           extraHourSalary: 0,
           sundayExtraSalary: 0,
           sundayDeductionSalary: 0,
-          bonusDays: 0,
+          bonusDaysCount: 0,
           bonusDaySalary: 0,
           totalAdjustment: 0,
           netSalary: 0,
@@ -281,7 +305,7 @@ export default function App() {
         };
       }
 
-      // Rates (30-day divisor standard)
+      // Rates (Strictly 30-day divisor)
       const dailySalary = monthlySalary / 30;
       const hourlyRate = isDayWorker ? 0 : dailySalary / (dutyHours || 1);
       const effectiveDuty = isDayWorker ? 0 : ownTiffin ? Math.max(0, dutyHours - 0.5) : dutyHours;
@@ -294,7 +318,7 @@ export default function App() {
       let sundayDeductionHours = 0;
       let hasSunday14HoursFlag = false;
 
-      // Evaluate punches day-by-day
+      // Evaluate Day-by-Day Punches
       rec.days.forEach((d) => {
         const { isSunday, evaluatedStatus, actualHours } = d;
         actualTotalHours += actualHours || 0;
@@ -317,7 +341,7 @@ export default function App() {
             }
           }
         } else {
-          // Calendar Non-Sunday
+          // Calendar Non-Sunday (Normal Working Days)
           if (evaluatedStatus === "P") {
             normalPresentDays += 1.0;
           } else if (evaluatedStatus === "HD") {
@@ -326,7 +350,7 @@ export default function App() {
           } else if (evaluatedStatus === "A") {
             absentDays += 1.0;
           } else if (evaluatedStatus === "W") {
-            // Scheduled weekly off
+            // Weekly off
           } else {
             absentDays += 1.0;
           }
@@ -365,20 +389,22 @@ export default function App() {
 
       const sundayDeductionSalary = sundayDeductionHours * hourlyRate;
 
-      // CRITICAL BONUS DAYS EVALUATION
-      let bonusDays = 0;
+      // =========================================================
+      // CRITICAL BONUS DAYS LOGIC
+      // =========================================================
+      let bonusDaysCount = 0;
       if (isBonusEligible) {
         if (normalPresentDays >= 26) {
-          bonusDays = 3;
+          bonusDaysCount = 3;
         } else if (normalPresentDays === 25 || normalPresentDays === 24) {
-          bonusDays = 2;
+          bonusDaysCount = 2;
         } else if (normalPresentDays === 23) {
-          bonusDays = 1;
+          bonusDaysCount = 1;
         } else {
-          bonusDays = 0;
+          bonusDaysCount = 0;
         }
       }
-      const bonusDaySalary = bonusDays * dailySalary;
+      const bonusDaySalary = Math.round(bonusDaysCount * dailySalary);
 
       // Net Salary
       let netSalary = 0;
@@ -395,7 +421,7 @@ export default function App() {
           bonusDaySalary;
       }
 
-      // Adjustment
+      // Adjustment = bonusDaySalary + sundayExtraSalary + extraHourSalary - shortHourDeduction
       const totalAdjustment =
         bonusDaySalary + sundayExtraSalary + extraHourSalary - shortHourDeduction;
 
@@ -431,7 +457,7 @@ export default function App() {
         extraHourSalary,
         sundayExtraSalary,
         sundayDeductionSalary,
-        bonusDays,
+        bonusDaysCount,
         bonusDaySalary,
         totalAdjustment,
         netSalary: Math.max(0, Math.round(netSalary)),
@@ -540,8 +566,9 @@ export default function App() {
         if (dObj.getDay() === 0) sundayIndices.push(d);
       }
 
-      // Step 3: Scan Employees & Sub-Rows
-      // Physical Column 2 is DAY 1
+      const calculatedMonthYear = getMonthYearDisplay(fromDateObj, fromDateStr);
+
+      // Step 3: Scan Employees & Sub-Rows (Column 2 is Day 1)
       const parsedRecords = [];
       const masterById = new Map();
       master.forEach((m) => masterById.set(cleanId(m.empId), m));
@@ -693,6 +720,7 @@ export default function App() {
         toDate: toDateStr || `${detectedTotalDays}/Month`,
         totalDays: detectedTotalDays,
         sundaysCount: sundayIndices.length,
+        monthYear: calculatedMonthYear,
         processedAt: new Date().toLocaleTimeString()
       };
 
@@ -702,19 +730,30 @@ export default function App() {
       const payroll = calculatePayroll(parsedRecords, master, newMeta);
       setPayrollBreakdown(payroll);
 
-      logs.push(`Biometric sheet loaded with zero column shift. Extracted ${parsedRecords.length} staff records (${detectedTotalDays} days).`);
+      logs.push(`Biometric sheet loaded. Month: ${calculatedMonthYear}. Extracted ${parsedRecords.length} staff records (${detectedTotalDays} days).`);
       setParseLogs(logs);
-      setActiveTab("dashboard");
+
+      // Trigger Upload Confirmation Dialog
+      setUploadConfirmation({
+        fileName: file.name,
+        monthYear: calculatedMonthYear,
+        totalEmployees: parsedRecords.length,
+        totalDays: detectedTotalDays,
+        sundaysCount: sundayIndices.length,
+        fromDate: fromDateStr,
+        toDate: toDateStr
+      });
     } catch (err) {
       logs.push(`Parsing Diagnostic: ${err.message}`);
       setParseLogs(logs);
+      alert("Error parsing biometric report: " + err.message);
     } finally {
       setIsProcessing(false);
     }
   };
 
   // =========================================================================
-  // 4. PRELOADED DEMO GENERATOR (DALPAT SINGH = 252.30 HRS & 26 PRESENT)
+  // 4. PRELOADED DEMO GENERATOR
   // =========================================================================
   const loadInstantDemo = () => {
     setIsProcessing(true);
@@ -798,6 +837,7 @@ export default function App() {
       toDate: "30/04/2026",
       totalDays: 30,
       sundaysCount: 4,
+      monthYear: "APRIL 2026",
       processedAt: new Date().toLocaleTimeString()
     };
 
@@ -805,7 +845,7 @@ export default function App() {
     setMetaInfo(meta);
     const payroll = calculatePayroll(sampleAttendance, master, meta);
     setPayrollBreakdown(payroll);
-    setParseLogs(["Industrial reference dataset loaded. Dalpat Singh: 252.30 Total Hrs, 26 Present Days, 3 Bonus Days."]);
+    setParseLogs(["Industrial reference dataset loaded for April 2026. Dalpat Singh: 252.30 Hrs, 26 Present Days, 3 Bonus Days."]);
     setIsProcessing(false);
   };
 
@@ -958,12 +998,12 @@ export default function App() {
         "Required Hrs": Number(r.requiredHours.toFixed(2)),
         "Short Hrs": r.shortHours,
         "Extra Hrs": r.extraHours,
-        "Bonus Days": r.bonusDays,
+        "Bonus Days Count": r.bonusDaysCount,
+        "Bonus Pay (₹)": r.bonusDaySalary,
         "Absent Ded (₹)": Math.round(r.absentDeduction),
         "Short Hrs Ded (₹)": Math.round(r.shortHourDeduction),
         "Extra Hrs Pay (₹)": Math.round(r.extraHourSalary),
         "Sunday Pay (₹)": Math.round(r.sundayExtraSalary),
-        "Bonus Pay (₹)": Math.round(r.bonusDaySalary),
         "Adjustment (AD) (₹)": Math.round(r.totalAdjustment),
         "NET PAYABLE (₹)": r.netSalary,
         "Remarks": r.remarks
@@ -972,7 +1012,7 @@ export default function App() {
     const ws = XLSX.utils.json_to_sheet(exportRows);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Payroll_Report");
-    XLSX.writeFile(wb, `Payroll_Summary_${metaInfo.totalDays}Days_${metaInfo.fileName.replace(/\.xlsx?/i, "")}.xlsx`);
+    XLSX.writeFile(wb, `Payroll_${metaInfo.monthYear.replace(/\s+/g, "_")}_${metaInfo.totalDays}Days.xlsx`);
   };
 
   // =========================================================================
@@ -1069,13 +1109,13 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-[#0B0F19] text-slate-100 font-sans selection:bg-indigo-500 selection:text-white flex flex-col relative overflow-x-hidden">
-      {/* Background Ambient Orbs */}
+      {/* Background Glowing Ambient Orbs */}
       <div className="fixed top-0 left-1/4 w-[650px] h-[400px] bg-indigo-600/10 rounded-full blur-[140px] pointer-events-none -z-10" />
       <div className="fixed bottom-10 right-10 w-[550px] h-[450px] bg-emerald-600/10 rounded-full blur-[150px] pointer-events-none -z-10" />
       <div className="fixed top-1/2 right-1/4 w-[450px] h-[350px] bg-amber-600/10 rounded-full blur-[130px] pointer-events-none -z-10" />
 
-      {/* Top Header */}
-      <header className="sticky top-0 z-40 bg-[#0B0F19]/85 backdrop-blur-xl border-b border-slate-800/80 px-4 sm:px-8 py-3.5 flex flex-wrap items-center justify-between gap-4 shadow-2xl">
+      {/* TOP HEADER */}
+      <header className="sticky top-0 z-40 bg-[#0B0F19]/90 backdrop-blur-xl border-b border-slate-800/80 px-4 sm:px-8 py-3.5 flex flex-wrap items-center justify-between gap-4 shadow-2xl">
         <div className="flex items-center space-x-3">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 via-violet-600 to-cyan-400 p-[1px] shadow-lg shadow-indigo-500/20">
             <div className="w-full h-full bg-[#0B0F19] rounded-[11px] flex items-center justify-center">
@@ -1092,11 +1132,11 @@ export default function App() {
               </span>
             </div>
             <p className="text-[11px] text-slate-400 flex items-center gap-1.5">
-              <span>{metaInfo.fileName}</span>
+              <span className="font-semibold text-slate-200">{metaInfo.fileName}</span>
               <span className="w-1 h-1 rounded-full bg-slate-600" />
               <span>{metaInfo.fromDate} - {metaInfo.toDate}</span>
               <span className="w-1 h-1 rounded-full bg-slate-600" />
-              <span className="text-emerald-400 font-medium">{metaInfo.totalDays} Days ({metaInfo.sundaysCount} Sundays)</span>
+              <span className="text-emerald-400 font-semibold">{metaInfo.totalDays} Days ({metaInfo.sundaysCount} Sundays)</span>
             </p>
           </div>
         </div>
@@ -1104,7 +1144,7 @@ export default function App() {
         <div className="flex items-center gap-2.5">
           <button
             onClick={loadInstantDemo}
-            title="Reload Demo Data"
+            title="Reload Demo Data (Dalpat Singh = 252.30 Hrs)"
             className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700/80 text-xs text-slate-300 hover:text-white border border-slate-700/70 transition shadow-sm"
           >
             <Sparkles className="w-3.5 h-3.5 text-amber-400" /> Load Demo
@@ -1119,7 +1159,7 @@ export default function App() {
         </div>
       </header>
 
-      {/* Secondary Navigation */}
+      {/* SECONDARY NAVIGATION & CONTROLS */}
       <div className="border-b border-slate-800/80 bg-[#0B0F19]/40 backdrop-blur-md px-4 sm:px-8 py-2.5 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-900/80 border border-slate-800">
           {[
@@ -1149,6 +1189,7 @@ export default function App() {
         </div>
 
         <div className="flex items-center gap-3">
+          {/* Show / Hide Inactive Employees Toggle */}
           <button
             onClick={() => setShowInactive(!showInactive)}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition ${
@@ -1161,6 +1202,7 @@ export default function App() {
             <span>Show Inactive ({master.filter((m) => String(m.active).toLowerCase() === "no").length})</span>
           </button>
 
+          {/* Search Bar */}
           <div className="relative">
             <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-500" />
             <input
@@ -1179,7 +1221,7 @@ export default function App() {
         </div>
       </div>
 
-      {/* Main Container */}
+      {/* MAIN CONTENT AREA */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
         {parseLogs.length > 0 && (
           <div className="p-3 bg-indigo-950/40 border border-indigo-800/60 rounded-xl text-xs text-indigo-200 flex items-center justify-between shadow-lg">
@@ -1193,9 +1235,46 @@ export default function App() {
           </div>
         )}
 
+        {/* ========================================================================= */}
         {/* TAB 1: DASHBOARD */}
+        {/* ========================================================================= */}
         {activeTab === "dashboard" && (
           <div className="space-y-6">
+            {/* PROMINENT UPLOADED MONTH & FILE DETAILS BANNER */}
+            <div className="rounded-2xl bg-gradient-to-r from-indigo-950/60 via-slate-900/80 to-purple-950/60 border border-indigo-500/30 p-5 shadow-2xl backdrop-blur-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+              <div className="flex items-center space-x-4">
+                <div className="w-12 h-12 rounded-xl bg-indigo-600/20 border border-indigo-500/40 flex items-center justify-center text-indigo-400 flex-shrink-0 shadow-inner">
+                  <CalendarDays className="w-6 h-6 text-indigo-300" />
+                </div>
+                <div>
+                  <div className="text-[11px] font-semibold uppercase tracking-wider text-indigo-300 flex items-center gap-2">
+                    <span>Active Payroll Processing Period</span>
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    <span className="text-emerald-400 font-mono">Live Evaluated</span>
+                  </div>
+                  <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight flex items-center gap-3 mt-0.5">
+                    {metaInfo.monthYear}
+                    <span className="text-xs font-mono font-medium bg-slate-800/90 text-slate-300 border border-slate-700 px-2.5 py-1 rounded-lg">
+                      {metaInfo.totalDays} Total Days ({metaInfo.sundaysCount} Sundays)
+                    </span>
+                  </h2>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    Source: <span className="text-slate-200 font-semibold">{metaInfo.fileName}</span> (Date Range: <span className="text-indigo-300 font-mono">{metaInfo.fromDate}</span> to <span className="text-indigo-300 font-mono">{metaInfo.toDate}</span>)
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 self-stretch md:self-auto justify-end">
+                <button
+                  onClick={() => setActiveTab("upload")}
+                  className="px-3.5 py-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-200 hover:text-white border border-slate-700 text-xs font-semibold flex items-center gap-1.5 transition"
+                >
+                  <Upload className="w-3.5 h-3.5 text-indigo-400" /> Upload Another Month
+                </button>
+              </div>
+            </div>
+
+            {/* Top 4 Primary KPI Cards */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="p-4 rounded-2xl bg-slate-900/70 backdrop-blur-xl border border-slate-800/80 hover:border-emerald-500/50 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-emerald-500/10 group">
                 <div className="flex items-center justify-between text-xs font-semibold text-slate-400">
@@ -1257,6 +1336,7 @@ export default function App() {
               </div>
             </div>
 
+            {/* Second Row Metric Summary */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="p-3.5 rounded-xl bg-slate-900/50 border border-slate-800/70 flex items-center justify-between">
                 <div>
@@ -1291,15 +1371,15 @@ export default function App() {
               </div>
             </div>
 
-            {/* Preview Table */}
+            {/* Preview Table WITH DEDICATED BONUS DAYS & BONUS PAY COLUMNS */}
             <div className="rounded-2xl bg-slate-900/70 backdrop-blur-xl border border-slate-800/80 overflow-hidden shadow-2xl">
               <div className="p-4 sm:p-5 border-b border-slate-800 flex flex-wrap justify-between items-center gap-3">
                 <div>
                   <h3 className="font-bold text-sm sm:text-base text-white flex items-center gap-2">
-                    <Layers className="w-4 h-4 text-indigo-400" /> Monthly Payroll Summary Preview
+                    <Layers className="w-4 h-4 text-indigo-400" /> Monthly Payroll Summary Preview ({metaInfo.monthYear})
                   </h3>
                   <p className="text-xs text-slate-400">
-                    Live evaluated employee payroll records. Dalpat Singh: 252.30 Hrs, 26 Present, Bonus Pay evaluated.
+                    Showing dedicated columns for Bonus Days (3d / 2d / 1d / 0d) and calculated Bonus Pay (₹).
                   </p>
                 </div>
                 <button
@@ -1321,7 +1401,8 @@ export default function App() {
                       <th className="py-3 px-3 text-right">Base Salary</th>
                       <th className="py-3 px-3 text-center">P / A Days</th>
                       <th className="py-3 px-3 text-right">Punch Hrs</th>
-                      <th className="py-3 px-3 text-center text-amber-400">Bonus Pay</th>
+                      <th className="py-3 px-3 text-center text-amber-300 font-bold">Bonus Days</th>
+                      <th className="py-3 px-3 text-right text-amber-400 font-bold">Bonus Pay (₹)</th>
                       <th className="py-3 px-3 text-right">Adjustment (AD)</th>
                       <th className="py-3 px-4 text-right text-emerald-400 font-bold">NET SALARY</th>
                       <th className="py-3 px-4 font-sans">Remarks</th>
@@ -1361,10 +1442,21 @@ export default function App() {
                         <td className="py-2.5 px-3 text-right font-bold text-slate-200">
                           {formatDec(row.actualTotalHours, 2)}h
                         </td>
+                        {/* Dedicated Bonus Days Column */}
                         <td className="py-2.5 px-3 text-center">
+                          {row.bonusDaysCount > 0 ? (
+                            <span className="bg-amber-500/20 text-amber-300 border border-amber-500/40 px-2 py-0.5 rounded-full font-bold text-[10px]">
+                              {row.bonusDaysCount} {row.bonusDaysCount === 1 ? "Day" : "Days"}
+                            </span>
+                          ) : (
+                            <span className="text-slate-500 text-[10px]">0 Days</span>
+                          )}
+                        </td>
+                        {/* Dedicated Bonus Pay Column */}
+                        <td className="py-2.5 px-3 text-right">
                           {row.bonusDaySalary > 0 ? (
-                            <span className="text-amber-400 font-bold">
-                              +{formatINR(row.bonusDaySalary)} ({row.bonusDays}d)
+                            <span className="text-amber-400 font-bold font-mono">
+                              +{formatINR(row.bonusDaySalary)}
                             </span>
                           ) : (
                             <span className="text-slate-500 font-mono">₹0</span>
@@ -1387,16 +1479,18 @@ export default function App() {
           </div>
         )}
 
-        {/* TAB 2: DETAILED SALARY SHEET */}
+        {/* ========================================================================= */}
+        {/* TAB 2: DETAILED SALARY BREAKDOWN SHEET */}
+        {/* ========================================================================= */}
         {activeTab === "salary" && (
           <div className="space-y-4">
             <div className="rounded-2xl bg-slate-900/70 backdrop-blur-xl border border-slate-800/80 p-4 sm:p-5 flex flex-wrap justify-between items-center gap-3">
               <div>
                 <h2 className="font-bold text-base text-white flex items-center gap-2">
-                  <DollarSign className="w-5 h-5 text-emerald-400" /> Full Industrial Salary Calculation Sheet
+                  <DollarSign className="w-5 h-5 text-emerald-400" /> Full Industrial Salary Calculation Sheet ({metaInfo.monthYear})
                 </h2>
                 <p className="text-xs text-slate-400">
-                  Daily punch hours parsed from biometric Sub-Rows (`2 + dayIndex`). Normal present days are maintained without deduction for OT or short hours.
+                  Includes separate columns for <span className="text-amber-300 font-semibold">Bonus Days</span> and <span className="text-amber-300 font-semibold">Bonus Pay</span> according to standard 26+ $\rightarrow$ 3d; 24-25 $\rightarrow$ 2d; 23 $\rightarrow$ 1d formula.
                 </p>
               </div>
 
@@ -1431,7 +1525,9 @@ export default function App() {
                       <th className="py-3 px-2 text-right text-rose-400">Short Ded</th>
                       <th className="py-3 px-2 text-right text-indigo-400">Extra Pay</th>
                       <th className="py-3 px-2 text-right text-amber-400">Sun Pay</th>
-                      <th className="py-3 px-2 text-center text-amber-300">Bonus Pay</th>
+                      {/* DEDICATED BONUS DAYS & BONUS PAY COLUMNS */}
+                      <th className="py-3 px-2 text-center text-amber-300 bg-slate-950 font-bold border-l border-slate-800">Bonus Days</th>
+                      <th className="py-3 px-2 text-right text-amber-300 bg-slate-950 font-bold border-r border-slate-800">Bonus Pay</th>
                       <th className="py-3 px-3 text-right bg-slate-950 text-emerald-400 font-extrabold text-sm">
                         NET SALARY
                       </th>
@@ -1441,7 +1537,7 @@ export default function App() {
                   <tbody className="divide-y divide-slate-800/50">
                     {displayedPayroll.length === 0 ? (
                       <tr>
-                        <td colSpan="19" className="text-center py-12 text-slate-500 font-sans">
+                        <td colSpan="20" className="text-center py-12 text-slate-500 font-sans">
                           No matching payroll records found.
                         </td>
                       </tr>
@@ -1492,13 +1588,24 @@ export default function App() {
                           <td className="py-2 px-2 text-right text-amber-400">
                             {emp.sundayExtraSalary > 0 ? `+${formatINR(emp.sundayExtraSalary)}` : "-"}
                           </td>
-                          <td className="py-2 px-2 text-center">
-                            {emp.bonusDaySalary > 0 ? (
-                              <span className="text-amber-400 font-bold">
-                                +{formatINR(emp.bonusDaySalary)} ({emp.bonusDays}d)
+                          {/* Dedicated Bonus Days Column */}
+                          <td className="py-2 px-2 text-center border-l border-slate-800 bg-slate-950/40">
+                            {emp.bonusDaysCount > 0 ? (
+                              <span className="text-amber-300 font-bold bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/30 text-[10px]">
+                                {emp.bonusDaysCount}d
                               </span>
                             ) : (
-                              <span className="text-slate-500 font-mono">₹0</span>
+                              <span className="text-slate-600 text-[10px]">0d</span>
+                            )}
+                          </td>
+                          {/* Dedicated Bonus Pay Column */}
+                          <td className="py-2 px-2 text-right border-r border-slate-800 bg-slate-950/40">
+                            {emp.bonusDaySalary > 0 ? (
+                              <span className="text-amber-400 font-bold">
+                                +{formatINR(emp.bonusDaySalary)}
+                              </span>
+                            ) : (
+                              <span className="text-slate-600 font-mono">₹0</span>
                             )}
                           </td>
                           <td className="py-2 px-3 text-right bg-slate-950/80 font-extrabold text-emerald-400 text-sm">
@@ -1515,13 +1622,15 @@ export default function App() {
           </div>
         )}
 
+        {/* ========================================================================= */}
         {/* TAB 3: DAILY PUNCH INSPECTOR */}
+        {/* ========================================================================= */}
         {activeTab === "attendance" && (
           <div className="space-y-4">
             <div className="rounded-2xl bg-slate-900/70 backdrop-blur-xl border border-slate-800/80 p-4 sm:p-5 flex flex-wrap justify-between items-center gap-3">
               <div>
                 <h2 className="font-bold text-base text-white flex items-center gap-2">
-                  <Calendar className="w-5 h-5 text-indigo-400" /> Daily Punch & Biometric Timeline
+                  <Calendar className="w-5 h-5 text-indigo-400" /> Daily Punch & Biometric Timeline ({metaInfo.monthYear})
                 </h2>
                 <p className="text-xs text-slate-400">
                   Physical column mapping: Day 1 punch is extracted at column index 2.
@@ -1624,7 +1733,9 @@ export default function App() {
           </div>
         )}
 
+        {/* ========================================================================= */}
         {/* TAB 4: EMPLOYEE MASTER */}
+        {/* ========================================================================= */}
         {activeTab === "master" && (
           <div className="space-y-4">
             <div className="rounded-2xl bg-slate-900/70 backdrop-blur-xl border border-slate-800/80 p-4 sm:p-5 flex flex-wrap justify-between items-center gap-3">
@@ -1774,7 +1885,9 @@ export default function App() {
           </div>
         )}
 
+        {/* ========================================================================= */}
         {/* TAB 5: BIOMETRIC UPLOADER */}
+        {/* ========================================================================= */}
         {activeTab === "upload" && (
           <div className="max-w-3xl mx-auto space-y-6">
             <div className="rounded-2xl bg-slate-900/70 backdrop-blur-xl border border-slate-800/80 p-6 sm:p-8 shadow-2xl">
@@ -1782,7 +1895,7 @@ export default function App() {
                 <Upload className="w-5 h-5 text-indigo-400" /> Biometric Attendance Excel Importer
               </h2>
               <p className="text-xs text-slate-400 mt-1">
-                Reads raw biometric .xls reports. Uses exact physical column extraction: Column 0 is the label, Column 1 is merged padding, and Day 1 punch is extracted at column index 2.
+                Reads raw biometric `.xls` reports. Upon uploading, the active month will be detected and a confirmation will appear.
               </p>
 
               <div
@@ -1833,17 +1946,76 @@ export default function App() {
                 <ShieldCheck className="w-4 h-4 text-emerald-400" /> Biometric Engine Specifications
               </h4>
               <ul className="list-disc list-inside space-y-1 text-slate-400">
-                <li><strong className="text-slate-300">Physical Column 2:</strong> Day 1 punch starts strictly at physical column 2 (2 + dayIndex).</li>
-                <li><strong className="text-slate-300">Preserved Punch Hours:</strong> Total monthly hours are the direct sum of daily duration strings (Dalpat Singh = 252.30 Hrs).</li>
-                <li><strong className="text-slate-300">Bonus Days Logic:</strong> Calculated on non-Sunday present days (26+ &#8594; 3d, 24-25 &#8594; 2d, 23 &#8594; 1d).</li>
-                <li><strong className="text-slate-300">Strict Inactive Exclusion:</strong> Inactive staff contribute ₹0 to all financial summaries and KPIs.</li>
+                <li><strong className="text-slate-300">Month Header Tracking:</strong> Automatically extracts the Month & Year directly from the biometric header range.</li>
+                <li><strong className="text-slate-300">Dedicated Bonus Columns:</strong> Shows distinct count for Bonus Days (3d / 2d / 1d / 0d) and computed Bonus Pay.</li>
+                <li><strong className="text-slate-300">Instant Upload Confirmation:</strong> Live popup confirmation showing active records, days count, and extracted month.</li>
               </ul>
             </div>
           </div>
         )}
       </main>
 
-      {/* Modal: Add / Edit Employee */}
+      {/* ========================================================================= */}
+      {/* MODAL: UPLOAD CONFIRMATION DIALOG */}
+      {/* ========================================================================= */}
+      {uploadConfirmation && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-in fade-in duration-200">
+          <div className="bg-[#0D111D] border border-indigo-500/40 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl p-6 text-center space-y-4">
+            <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center justify-center mx-auto shadow-lg shadow-emerald-500/20">
+              <CheckCircle2 className="w-8 h-8" />
+            </div>
+
+            <div>
+              <h3 className="text-xl font-extrabold text-white">Biometric Sheet Confirmed!</h3>
+              <p className="text-xs text-slate-400 mt-1">
+                The attendance file was parsed and payroll calculations were successfully refreshed.
+              </p>
+            </div>
+
+            <div className="p-4 rounded-xl bg-slate-900/90 border border-slate-800 text-left space-y-2 text-xs">
+              <div className="flex justify-between items-center py-1 border-b border-slate-800/60">
+                <span className="text-slate-400">Active Month:</span>
+                <span className="font-bold text-indigo-300 font-mono text-sm">{uploadConfirmation.monthYear}</span>
+              </div>
+              <div className="flex justify-between items-center py-1 border-b border-slate-800/60">
+                <span className="text-slate-400">File Name:</span>
+                <span className="font-medium text-slate-200 truncate max-w-[200px]">{uploadConfirmation.fileName}</span>
+              </div>
+              <div className="flex justify-between items-center py-1 border-b border-slate-800/60">
+                <span className="text-slate-400">Employees Processed:</span>
+                <span className="font-bold text-emerald-400 font-mono">{uploadConfirmation.totalEmployees} Staff</span>
+              </div>
+              <div className="flex justify-between items-center py-1">
+                <span className="text-slate-400">Calendar Days:</span>
+                <span className="font-medium text-slate-200 font-mono">{uploadConfirmation.totalDays} Days ({uploadConfirmation.sundaysCount} Sundays)</span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2.5 pt-2">
+              <button
+                onClick={() => {
+                  setUploadConfirmation(null);
+                  setActiveTab("salary");
+                }}
+                className="flex-1 py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 transition"
+              >
+                Inspect Salary Sheet
+              </button>
+              <button
+                onClick={() => {
+                  setUploadConfirmation(null);
+                  setActiveTab("dashboard");
+                }}
+                className="flex-1 py-2 px-3 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white text-xs font-bold shadow-lg shadow-indigo-600/30 transition"
+              >
+                Open Dashboard
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: ADD / EDIT EMPLOYEE */}
       {isEmpModalOpen && (
         <EmployeeModal
           initialData={editingEmp}
