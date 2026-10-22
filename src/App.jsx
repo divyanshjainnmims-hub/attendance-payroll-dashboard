@@ -1,5 +1,3 @@
-
-```jsx
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import * as XLSX from "xlsx";
 import {
@@ -29,13 +27,11 @@ import {
   TrendingUp,
   Activity,
   Layers,
-  FileUp,
-  CheckCircle2,
-  HelpCircle
+  FileUp
 } from "lucide-react";
 
 // =========================================================================
-// 1. HARD-CODED PRELOADED 75+ EMPLOYEE MASTER
+// 1. HARD-CODED PRELOADED 75+ EMPLOYEE MASTER ROSTER
 // =========================================================================
 const INITIAL_MASTER = [
   { empId: "1", name: "DALPAT SINGH", dutyHours: 9.5, salary: 18000, ownTiffin: "No", bonusDays: "Yes", active: "Yes", notes: "" },
@@ -131,7 +127,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [showInactive, setShowInactive] = useState(false);
 
-  // Master State initialized with localStorage or fallback
+  // Load Employee Master from localStorage with fallback
   const [master, setMaster] = useState(() => {
     try {
       const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
@@ -145,7 +141,7 @@ export default function App() {
     return INITIAL_MASTER;
   });
 
-  // Sync Master to LocalStorage
+  // Persist master state
   useEffect(() => {
     try {
       localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(master));
@@ -171,12 +167,12 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState("");
   const [attendanceFilter, setAttendanceFilter] = useState("ALL");
 
-  // Modals
+  // Modals & Refs
   const [isEmpModalOpen, setIsEmpModalOpen] = useState(false);
   const [editingEmp, setEditingEmp] = useState(null);
   const fileMasterInputRef = useRef(null);
 
-  // Parse time & durations
+  // Time & Duration Helpers
   const parseTimeToHours = (timeVal) => {
     if (timeVal === undefined || timeVal === null || timeVal === "") return null;
     if (typeof timeVal === "number") return Number((timeVal * 24).toFixed(2));
@@ -249,7 +245,7 @@ export default function App() {
       const ownTiffin = String(profile.ownTiffin || "").trim().toLowerCase() === "yes";
       const isBonusEligible = String(profile.bonusDays || "").trim().toLowerCase() === "yes";
 
-      // Strict Exclusion Rule for Inactive Staff: 0 financial impact
+      // If Inactive: Strictly zero out financials
       if (!isActive) {
         return {
           empId,
@@ -285,7 +281,7 @@ export default function App() {
         };
       }
 
-      // Rates (Strictly 30-day divisor)
+      // Rates (30-day divisor standard)
       const dailySalary = monthlySalary / 30;
       const hourlyRate = isDayWorker ? 0 : dailySalary / (dutyHours || 1);
       const effectiveDuty = isDayWorker ? 0 : ownTiffin ? Math.max(0, dutyHours - 0.5) : dutyHours;
@@ -298,7 +294,7 @@ export default function App() {
       let sundayDeductionHours = 0;
       let hasSunday14HoursFlag = false;
 
-      // Evaluate Day-by-Day Punches
+      // Evaluate punches day-by-day
       rec.days.forEach((d) => {
         const { isSunday, evaluatedStatus, actualHours } = d;
         actualTotalHours += actualHours || 0;
@@ -330,7 +326,7 @@ export default function App() {
           } else if (evaluatedStatus === "A") {
             absentDays += 1.0;
           } else if (evaluatedStatus === "W") {
-            // Normal weekly off
+            // Scheduled weekly off
           } else {
             absentDays += 1.0;
           }
@@ -369,7 +365,7 @@ export default function App() {
 
       const sundayDeductionSalary = sundayDeductionHours * hourlyRate;
 
-      // EXACT BONUS DAYS EVALUATION
+      // CRITICAL BONUS DAYS EVALUATION
       let bonusDays = 0;
       if (isBonusEligible) {
         if (normalPresentDays >= 26) {
@@ -399,7 +395,7 @@ export default function App() {
           bonusDaySalary;
       }
 
-      // Adjustment = bonusDaySalary + sundayExtraSalary + extraHourSalary - shortHourDeduction
+      // Adjustment
       const totalAdjustment =
         bonusDaySalary + sundayExtraSalary + extraHourSalary - shortHourDeduction;
 
@@ -443,11 +439,18 @@ export default function App() {
       };
     });
 
-    results.sort((a, b) => parseInt(a.empId, 10) - parseInt(b.empId, 10) || a.empId.localeCompare(b.empId));
+    // Safe natural numeric sorting
+    results.sort((a, b) => {
+      const numA = parseInt(a.empId, 10);
+      const numB = parseInt(b.empId, 10);
+      if (isNaN(numA) || isNaN(numB)) return a.empId.localeCompare(b.empId);
+      return numA - numB;
+    });
+
     return results;
   };
 
-  // Re-run whenever master list changes
+  // Re-run payroll if master records change
   useEffect(() => {
     if (attendanceRecords.length > 0) {
       const recalculated = calculatePayroll(attendanceRecords, master, metaInfo);
@@ -469,10 +472,10 @@ export default function App() {
       const rawMatrix = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" });
 
       if (!rawMatrix || rawMatrix.length < 5) {
-        throw new Error("Uploaded workbook does not contain sufficient rows for biometric parsing.");
+        throw new Error("Uploaded workbook contains insufficient rows.");
       }
 
-      // Step 1: Detect Start and End Dates in rows 1 to 15
+      // Step 1: Detect Date Range
       let fromDateStr = "";
       let toDateStr = "";
       let detectedTotalDays = 30;
@@ -480,6 +483,7 @@ export default function App() {
 
       for (let r = 0; r < Math.min(15, rawMatrix.length); r++) {
         const row = rawMatrix[r];
+        if (!row || !Array.isArray(row)) continue;
         for (let c = 0; c < row.length; c++) {
           const val = String(row[c] || "").trim();
           if (/from\s*:/i.test(val)) {
@@ -504,15 +508,16 @@ export default function App() {
 
       if (fromDateStr) fromDateObj = parseReportDate(fromDateStr);
       if (!fromDateObj) {
-        fromDateObj = new Date(2026, 3, 1); // Default April 2026
+        fromDateObj = new Date(2026, 3, 1);
         fromDateStr = "01/04/2026";
         toDateStr = "30/04/2026";
       }
 
-      // Step 2: Exact Physical Column Detection (Row 10 has 1..N, Day 1 at physical column 2)
+      // Step 2: Detect sequence header 1..N
       let detectedDaysCount = 0;
       for (let r = 0; r < Math.min(30, rawMatrix.length); r++) {
         const row = rawMatrix[r];
+        if (!row || !Array.isArray(row)) continue;
         for (let c = 0; c < row.length - 2; c++) {
           const n1 = parseInt(row[c], 10);
           const n2 = parseInt(row[c + 1], 10);
@@ -528,7 +533,6 @@ export default function App() {
       }
       if (detectedDaysCount > 0) detectedTotalDays = detectedDaysCount;
 
-      // Calendar Sunday Mapping
       const sundayIndices = [];
       for (let d = 0; d < detectedTotalDays; d++) {
         const dObj = new Date(fromDateObj);
@@ -537,24 +541,20 @@ export default function App() {
       }
 
       // Step 3: Scan Employees & Sub-Rows
-      // TRUE PHYSICAL DAILY COLUMN MAPPING:
-      // Column 0 = label ("Status", "Total Hrs")
-      // Column 1 = BLANK / MERGED padding
-      // Column 2 = DAY 1
-      // For dayIndex d (0 to totalDays - 1), physical column is (2 + d).
+      // Physical Column 2 is DAY 1
       const parsedRecords = [];
       const masterById = new Map();
       master.forEach((m) => masterById.set(cleanId(m.empId), m));
 
       for (let r = 0; r < rawMatrix.length; r++) {
         const row = rawMatrix[r];
+        if (!row || !Array.isArray(row)) continue;
         const rowStr = row.map((x) => String(x || "")).join(" ");
 
         if (/emp\s*id\s*:/i.test(rowStr)) {
           let rawEmpId = "";
           let rawEmpName = "";
 
-          // Extract ID and Name from this row
           for (let c = 0; c < row.length; c++) {
             const cell = String(row[c] || "").trim();
             if (/emp\s*id\s*:/i.test(cell)) {
@@ -577,7 +577,6 @@ export default function App() {
               if (nameMatch && nameMatch[1].trim()) {
                 rawEmpName = nameMatch[1].trim();
               } else {
-                // Skip merged empty cells to pull exact name
                 for (let nextC = c + 1; nextC < Math.min(c + 8, row.length); nextC++) {
                   const nxt = String(row[nextC] || "").trim();
                   if (nxt && !/type|dept/i.test(nxt)) {
@@ -595,7 +594,6 @@ export default function App() {
           const profile = masterById.get(empId);
           const finalName = profile ? profile.name : rawEmpName || `EMPLOYEE #${empId}`;
 
-          // Scan next 18 rows for: Status, First In, Last Out, Total Hrs
           let statusRow = null;
           let firstInRow = null;
           let lastOutRow = null;
@@ -603,9 +601,10 @@ export default function App() {
 
           for (let subR = r + 1; subR < Math.min(r + 18, rawMatrix.length); subR++) {
             const subRow = rawMatrix[subR];
+            if (!subRow || !Array.isArray(subRow)) continue;
             const labelCell = String(subRow[0] || "").toLowerCase().trim();
 
-            if (/emp\s*id\s*:/i.test(subRow.join(" "))) break; // Next employee encountered
+            if (/emp\s*id\s*:/i.test(subRow.map((x) => String(x || "")).join(" "))) break;
 
             if (!statusRow && labelCell.includes("status")) {
               statusRow = subRow;
@@ -622,7 +621,6 @@ export default function App() {
           const daysData = [];
 
           for (let d = 0; d < detectedTotalDays; d++) {
-            // STRICT COLUMN MAPPING: Day 1 data is at physical column 2
             const col = 2 + d;
             const rawStatus = statusRow ? String(statusRow[col] || "").trim() : "";
             const rawIn = firstInRow ? String(firstInRow[col] || "").trim() : "";
@@ -638,7 +636,6 @@ export default function App() {
               totDec = Number((outDec - inDec).toFixed(2));
             }
 
-            // Normalization of punch status
             let finalStatus = "A";
             const sUpper = rawStatus.toUpperCase();
 
@@ -683,7 +680,12 @@ export default function App() {
         throw new Error("No employee punch blocks with 'Emp ID :' were identified in the file.");
       }
 
-      parsedRecords.sort((a, b) => parseInt(a.empId, 10) - parseInt(b.empId, 10) || a.empId.localeCompare(b.empId));
+      parsedRecords.sort((a, b) => {
+        const numA = parseInt(a.empId, 10);
+        const numB = parseInt(b.empId, 10);
+        if (isNaN(numA) || isNaN(numB)) return a.empId.localeCompare(b.empId);
+        return numA - numB;
+      });
 
       const newMeta = {
         fileName: file.name,
@@ -712,12 +714,12 @@ export default function App() {
   };
 
   // =========================================================================
-  // 4. PRE-CALCULATED DEMO GENERATOR (DALPAT SINGH = 252.30 HRS & 26 PRESENT)
+  // 4. PRELOADED DEMO GENERATOR (DALPAT SINGH = 252.30 HRS & 26 PRESENT)
   // =========================================================================
   const loadInstantDemo = () => {
     setIsProcessing(true);
     const totalDays = 30;
-    const sundays = [5, 12, 19, 26]; // 4 Sundays in 30 days
+    const sundays = [5, 12, 19, 26];
 
     const sampleAttendance = master.map((emp) => {
       const isDalpat = cleanId(emp.empId) === "1";
@@ -732,7 +734,6 @@ export default function App() {
         let hrs = isDayWorker ? 9.5 : emp.dutyHours;
 
         if (isDalpat) {
-          // Exactly matching specification: 26 normal present days, 0 absences, 252.30 total hours
           if (isSunday) {
             status = "W";
             hrs = 0;
@@ -740,13 +741,11 @@ export default function App() {
             outTime = "--";
           } else {
             status = "P";
-            // 26 days * ~9.704 hrs = 252.30 hrs
             hrs = d <= 8 ? 9.65 : d <= 18 ? 9.75 : 9.70;
             inTime = "09:12";
             outTime = "18:54";
           }
         } else {
-          // Other employees realistic industrial simulation
           if (isSunday) {
             if (d === 12 && parseInt(emp.empId, 10) % 3 === 0) {
               status = "PW";
@@ -858,16 +857,19 @@ export default function App() {
         }).filter((x) => x.empId && x.name);
 
         if (!cleanedRows.length) {
-          alert("No valid employee entries found. Verify columns: 'Emp ID', 'Employee Name', 'Duty Hours', 'Monthly Salary'.");
+          alert("No valid employee entries found. Verify column headers.");
           return;
         }
 
         setMaster((prev) => {
           const map = new Map(prev.map((item) => [cleanId(item.empId), item]));
           cleanedRows.forEach((row) => map.set(cleanId(row.empId), row));
-          const merged = Array.from(map.values()).sort(
-            (a, b) => parseInt(a.empId, 10) - parseInt(b.empId, 10) || a.empId.localeCompare(b.empId)
-          );
+          const merged = Array.from(map.values()).sort((a, b) => {
+            const numA = parseInt(a.empId, 10);
+            const numB = parseInt(b.empId, 10);
+            if (isNaN(numA) || isNaN(numB)) return a.empId.localeCompare(b.empId);
+            return numA - numB;
+          });
           localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(merged));
           return merged;
         });
@@ -934,7 +936,6 @@ export default function App() {
     }
   };
 
-  // Export Complete Payroll to Excel
   const exportPayrollToExcel = () => {
     if (!payrollBreakdown.length) return;
 
@@ -1026,7 +1027,12 @@ export default function App() {
         const q = searchQuery.toLowerCase();
         return m.empId.toLowerCase().includes(q) || m.name.toLowerCase().includes(q);
       })
-      .sort((a, b) => parseInt(a.empId, 10) - parseInt(b.empId, 10) || a.empId.localeCompare(b.empId));
+      .sort((a, b) => {
+        const numA = parseInt(a.empId, 10);
+        const numB = parseInt(b.empId, 10);
+        if (isNaN(numA) || isNaN(numB)) return a.empId.localeCompare(b.empId);
+        return numA - numB;
+      });
   }, [master, showInactive, searchQuery]);
 
   const flattenedAttendance = useMemo(() => {
@@ -1063,12 +1069,12 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-[#0B0F19] text-slate-100 font-sans selection:bg-indigo-500 selection:text-white flex flex-col relative overflow-x-hidden">
-      {/* Background Glowing Ambient Orbs */}
+      {/* Background Ambient Orbs */}
       <div className="fixed top-0 left-1/4 w-[650px] h-[400px] bg-indigo-600/10 rounded-full blur-[140px] pointer-events-none -z-10" />
       <div className="fixed bottom-10 right-10 w-[550px] h-[450px] bg-emerald-600/10 rounded-full blur-[150px] pointer-events-none -z-10" />
       <div className="fixed top-1/2 right-1/4 w-[450px] h-[350px] bg-amber-600/10 rounded-full blur-[130px] pointer-events-none -z-10" />
 
-      {/* TOP HEADER */}
+      {/* Top Header */}
       <header className="sticky top-0 z-40 bg-[#0B0F19]/85 backdrop-blur-xl border-b border-slate-800/80 px-4 sm:px-8 py-3.5 flex flex-wrap items-center justify-between gap-4 shadow-2xl">
         <div className="flex items-center space-x-3">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 via-violet-600 to-cyan-400 p-[1px] shadow-lg shadow-indigo-500/20">
@@ -1098,7 +1104,7 @@ export default function App() {
         <div className="flex items-center gap-2.5">
           <button
             onClick={loadInstantDemo}
-            title="Reload Demo Data (Dalpat Singh = 252.30 Hrs)"
+            title="Reload Demo Data"
             className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700/80 text-xs text-slate-300 hover:text-white border border-slate-700/70 transition shadow-sm"
           >
             <Sparkles className="w-3.5 h-3.5 text-amber-400" /> Load Demo
@@ -1113,7 +1119,7 @@ export default function App() {
         </div>
       </header>
 
-      {/* SECONDARY NAVIGATION & CONTROLS */}
+      {/* Secondary Navigation */}
       <div className="border-b border-slate-800/80 bg-[#0B0F19]/40 backdrop-blur-md px-4 sm:px-8 py-2.5 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-900/80 border border-slate-800">
           {[
@@ -1143,7 +1149,6 @@ export default function App() {
         </div>
 
         <div className="flex items-center gap-3">
-          {/* Show / Hide Inactive Employees Toggle */}
           <button
             onClick={() => setShowInactive(!showInactive)}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition ${
@@ -1156,7 +1161,6 @@ export default function App() {
             <span>Show Inactive ({master.filter((m) => String(m.active).toLowerCase() === "no").length})</span>
           </button>
 
-          {/* Search Bar */}
           <div className="relative">
             <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-500" />
             <input
@@ -1175,9 +1179,8 @@ export default function App() {
         </div>
       </div>
 
-      {/* MAIN CONTENT AREA */}
+      {/* Main Container */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
-        {/* PARSE / DIAGNOSTIC BANNER */}
         {parseLogs.length > 0 && (
           <div className="p-3 bg-indigo-950/40 border border-indigo-800/60 rounded-xl text-xs text-indigo-200 flex items-center justify-between shadow-lg">
             <div className="flex items-center gap-2">
@@ -1190,12 +1193,9 @@ export default function App() {
           </div>
         )}
 
-        {/* ========================================================================= */}
         {/* TAB 1: DASHBOARD */}
-        {/* ========================================================================= */}
         {activeTab === "dashboard" && (
           <div className="space-y-6">
-            {/* Top 4 Primary KPI Cards */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="p-4 rounded-2xl bg-slate-900/70 backdrop-blur-xl border border-slate-800/80 hover:border-emerald-500/50 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-emerald-500/10 group">
                 <div className="flex items-center justify-between text-xs font-semibold text-slate-400">
@@ -1257,7 +1257,6 @@ export default function App() {
               </div>
             </div>
 
-            {/* Second Row Metric Summary */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="p-3.5 rounded-xl bg-slate-900/50 border border-slate-800/70 flex items-center justify-between">
                 <div>
@@ -1292,7 +1291,7 @@ export default function App() {
               </div>
             </div>
 
-            {/* Quick Preview Table */}
+            {/* Preview Table */}
             <div className="rounded-2xl bg-slate-900/70 backdrop-blur-xl border border-slate-800/80 overflow-hidden shadow-2xl">
               <div className="p-4 sm:p-5 border-b border-slate-800 flex flex-wrap justify-between items-center gap-3">
                 <div>
@@ -1300,7 +1299,7 @@ export default function App() {
                     <Layers className="w-4 h-4 text-indigo-400" /> Monthly Payroll Summary Preview
                   </h3>
                   <p className="text-xs text-slate-400">
-                    Live evaluated employee payroll records. Shows accurate punch hours (e.g. Dalpat Singh = 252.30 Hrs) and Bonus Pay.
+                    Live evaluated employee payroll records. Dalpat Singh: 252.30 Hrs, 26 Present, Bonus Pay evaluated.
                   </p>
                 </div>
                 <button
@@ -1388,9 +1387,7 @@ export default function App() {
           </div>
         )}
 
-        {/* ========================================================================= */}
-        {/* TAB 2: DETAILED SALARY BREAKDOWN SHEET */}
-        {/* ========================================================================= */}
+        {/* TAB 2: DETAILED SALARY SHEET */}
         {activeTab === "salary" && (
           <div className="space-y-4">
             <div className="rounded-2xl bg-slate-900/70 backdrop-blur-xl border border-slate-800/80 p-4 sm:p-5 flex flex-wrap justify-between items-center gap-3">
@@ -1399,7 +1396,7 @@ export default function App() {
                   <DollarSign className="w-5 h-5 text-emerald-400" /> Full Industrial Salary Calculation Sheet
                 </h2>
                 <p className="text-xs text-slate-400">
-                  Daily punch hours are parsed directly from biometric Sub-Rows (`2 + dayIndex`). Normal present days are not deducted for OT or short hours.
+                  Daily punch hours parsed from biometric Sub-Rows (`2 + dayIndex`). Normal present days are maintained without deduction for OT or short hours.
                 </p>
               </div>
 
@@ -1518,9 +1515,7 @@ export default function App() {
           </div>
         )}
 
-        {/* ========================================================================= */}
         {/* TAB 3: DAILY PUNCH INSPECTOR */}
-        {/* ========================================================================= */}
         {activeTab === "attendance" && (
           <div className="space-y-4">
             <div className="rounded-2xl bg-slate-900/70 backdrop-blur-xl border border-slate-800/80 p-4 sm:p-5 flex flex-wrap justify-between items-center gap-3">
@@ -1629,9 +1624,7 @@ export default function App() {
           </div>
         )}
 
-        {/* ========================================================================= */}
-        {/* TAB 4: EMPLOYEE MASTER (BULK + SINGLE + TEMPLATE + RESET) */}
-        {/* ========================================================================= */}
+        {/* TAB 4: EMPLOYEE MASTER */}
         {activeTab === "master" && (
           <div className="space-y-4">
             <div className="rounded-2xl bg-slate-900/70 backdrop-blur-xl border border-slate-800/80 p-4 sm:p-5 flex flex-wrap justify-between items-center gap-3">
@@ -1640,7 +1633,7 @@ export default function App() {
                   <Users className="w-5 h-5 text-indigo-400" /> Employee Master Roster ({master.length} Total Records)
                 </h2>
                 <p className="text-xs text-slate-400">
-                  Dual-Input: Bulk import spreadsheets or add individual employees. Automatically persists in <code className="text-indigo-300">localStorage</code>.
+                  Dual-Input: Bulk import spreadsheets or add individual employees. Automatically persists in LocalStorage.
                 </p>
               </div>
 
@@ -1781,9 +1774,7 @@ export default function App() {
           </div>
         )}
 
-        {/* ========================================================================= */}
-        {/* TAB 5: UPLOAD & PROCESS BIOMETRIC EXCEL */}
-        {/* ========================================================================= */}
+        {/* TAB 5: BIOMETRIC UPLOADER */}
         {activeTab === "upload" && (
           <div className="max-w-3xl mx-auto space-y-6">
             <div className="rounded-2xl bg-slate-900/70 backdrop-blur-xl border border-slate-800/80 p-6 sm:p-8 shadow-2xl">
@@ -1791,7 +1782,7 @@ export default function App() {
                 <Upload className="w-5 h-5 text-indigo-400" /> Biometric Attendance Excel Importer
               </h2>
               <p className="text-xs text-slate-400 mt-1">
-                Reads raw biometric `.xls` reports. Uses exact physical column extraction: Column 0 is the label, Column 1 is merged padding, and Day 1 punch is extracted at column index 2.
+                Reads raw biometric .xls reports. Uses exact physical column extraction: Column 0 is the label, Column 1 is merged padding, and Day 1 punch is extracted at column index 2.
               </p>
 
               <div
@@ -1842,9 +1833,9 @@ export default function App() {
                 <ShieldCheck className="w-4 h-4 text-emerald-400" /> Biometric Engine Specifications
               </h4>
               <ul className="list-disc list-inside space-y-1 text-slate-400">
-                <li><strong className="text-slate-300">Physical Column 2:</strong> Day 1 punch starts strictly at physical column 2 (`2 + dayIndex`).</li>
+                <li><strong className="text-slate-300">Physical Column 2:</strong> Day 1 punch starts strictly at physical column 2 (2 + dayIndex).</li>
                 <li><strong className="text-slate-300">Preserved Punch Hours:</strong> Total monthly hours are the direct sum of daily duration strings (Dalpat Singh = 252.30 Hrs).</li>
-                <li><strong className="text-slate-300">Bonus Days Logic:</strong> Calculated on non-Sunday present days (26+ $\rightarrow$ 3d, 24-25 $\rightarrow$ 2d, 23 $\rightarrow$ 1d).</li>
+                <li><strong className="text-slate-300">Bonus Days Logic:</strong> Calculated on non-Sunday present days (26+ &#8594; 3d, 24-25 &#8594; 2d, 23 &#8594; 1d).</li>
                 <li><strong className="text-slate-300">Strict Inactive Exclusion:</strong> Inactive staff contribute ₹0 to all financial summaries and KPIs.</li>
               </ul>
             </div>
@@ -1852,9 +1843,7 @@ export default function App() {
         )}
       </main>
 
-      {/* ========================================================================= */}
-      {/* MODAL: ADD / EDIT EMPLOYEE */}
-      {/* ========================================================================= */}
+      {/* Modal: Add / Edit Employee */}
       {isEmpModalOpen && (
         <EmployeeModal
           initialData={editingEmp}
@@ -2025,4 +2014,3 @@ function EmployeeModal({ initialData, onClose, onSave }) {
     </div>
   );
 }
-```
