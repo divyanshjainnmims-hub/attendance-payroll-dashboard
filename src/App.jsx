@@ -969,4 +969,278 @@ export default function App() {
     }
   };
 
-  const handleResetToFac
+  const handleResetToFactoryMaster = () => {
+    if (
+      window.confirm(
+        "Reset the entire Employee Master to factory defaults (44 preloaded employees)? Any manual edits will be overwritten."
+      )
+    ) {
+      setMaster(FACTORY_EMPLOYEE_MASTER);
+      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(FACTORY_EMPLOYEE_MASTER));
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-[#07090E] text-slate-100 font-sans selection:bg-indigo-500 selection:text-white flex flex-col relative overflow-x-hidden">
+      {/* Background Radial Glow Effects */}
+      <div className="fixed top-0 left-1/4 w-[600px] h-[400px] bg-indigo-600/10 rounded-full blur-[130px] pointer-events-none -z-10" />
+      <div className="fixed bottom-10 right-10 w-[500px] h-[400px] bg-emerald-600/10 rounded-full blur-[140px] pointer-events-none -z-10" />
+      <div className="fixed top-1/2 right-1/4 w-[400px] h-[300px] bg-violet-600/10 rounded-full blur-[120px] pointer-events-none -z-10" />
+
+      {/* ========================================================================= */}
+      {/* HEADER BAR */}
+      {/* ========================================================================= */}
+      <header className="sticky top-0 z-40 bg-[#0B0F19]/80 backdrop-blur-xl border-b border-slate-800/80 px-4 sm:px-8 py-3.5 flex flex-wrap items-center justify-between gap-4 shadow-2xl">
+        <div className="flex items-center space-x-3">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 via-violet-600 to-cyan-400 p-[1px] shadow-lg shadow-indigo-500/20">
+            <div className="w-full h-full bg-[#0B0F19] rounded-[11px] flex items-center justify-center">
+              <Building2 className="w-5 h-5 text-indigo-400" />
+            </div>
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h1 className="font-extrabold tracking-tight text-white text-base sm:text-lg">
+                PUNCH<span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-400">PAY</span> PRO
+              </h1>
+              <span className="text-[10px] font-mono uppercase bg-indigo-500/10 text-indigo-300 border border-indigo-500/30 px-2 py-0.5 rounded-full font-bold flex items-center gap-1">
+                <ShieldCheck className="w-3 h-3 text-emerald-400" /> v2.6 Industrial
+              </span>
+            </div>
+            <p className="text-[11px] text-slate-400 flex items-center gap-1.5">
+              <span>{metaInfo.fileName}</span>
+              <span className="w-1 h-1 rounded-full bg-slate-600" />
+              <span>Range: {metaInfo.fromDate} - {metaInfo.toDate}</span>
+              <span className="w-1 h-1 rounded-full bg-slate-600" />
+              <span className="text-emerald-400 font-medium">{metaInfo.totalDays} Days ({metaInfo.sundaysCount} Sundays)</span>
+            </p>
+          </div>
+        </div>
+
+        {/* Action Controls & Navigation Pills */}
+        <div className="flex items-center gap-2.5">
+          {/* Quick Demo Re-loader */}
+          <button
+            onClick={loadInstantFactoryDemo}
+            title="Reload Synthetic Test Data"
+            className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700/80 text-xs text-slate-300 hover:text-white border border-slate-700/70 transition shadow-sm"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-amber-400" /> Demo Data
+          </button>
+
+          {/* Export Full Excel */}
+          <button
+            onClick={exportPayrollToExcel}
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-medium text-xs shadow-lg shadow-emerald-700/20 transition-all hover:scale-[1.02]"
+          >
+            <Download className="w-3.5 h-3.5" /> Export Excel
+          </button>
+        </div>
+      </header>
+
+      {/* ========================================================================= */}
+      {/* SECONDARY NAVIGATION TABS & FILTER BAR */}
+      {/* ========================================================================= */}
+      <div className="border-b border-slate-800/80 bg-[#0B0F19]/40 backdrop-blur-md px-4 sm:px-8 py-2.5 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-900/80 border border-slate-800">
+          {[
+            { id: "dashboard", label: "KPI Dashboard", icon: TrendingUp },
+            { id: "salary", label: "Salary Calculation Sheet", icon: DollarSign },
+            { id: "attendance", label: "Daily Punch Inspector", icon: Calendar },
+            { id: "master", label: "Employee Master (44)", icon: Users },
+            { id: "upload", label: "Biometric Uploader", icon: Upload }
+          ].map((tab) => {
+            const Icon = tab.icon;
+            const active = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 ${
+                  active
+                    ? "bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-md shadow-indigo-600/30"
+                    : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50"
+                }`}
+              >
+                <Icon className={`w-3.5 h-3.5 ${active ? "text-white" : "text-slate-400"}`} />
+                <span>{tab.label}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Global Controls: Search & Inactive Switch */}
+        <div className="flex items-center gap-3">
+          {/* Hide Inactive Toggle */}
+          <button
+            onClick={() => setHideInactive(!hideInactive)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition ${
+              hideInactive
+                ? "bg-indigo-500/10 text-indigo-300 border-indigo-500/30"
+                : "bg-slate-800 text-slate-400 border-slate-700"
+            }`}
+          >
+            {hideInactive ? <EyeOff className="w-3.5 h-3.5 text-indigo-400" /> : <Eye className="w-3.5 h-3.5" />}
+            <span>Hide Inactive ({master.filter((m) => m.active === "No").length})</span>
+          </button>
+
+          {/* Search Box */}
+          <div className="relative">
+            <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-500" />
+            <input
+              type="text"
+              placeholder="Search ID, Name..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-8 pr-3 py-1.5 text-xs bg-slate-900/90 border border-slate-700/70 rounded-lg text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 w-44 sm:w-56"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")}
+                className="absolute right-2.5 top-2 text-slate-400 hover:text-slate-200"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* ========================================================================= */}
+      {/* MAIN CONTENT AREA */}
+      {/* ========================================================================= */}
+      <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
+        {/* PARSE / ERROR LOG BANNER */}
+        {parseLogs.length > 0 && (
+          <div className="p-3 bg-indigo-950/40 border border-indigo-800/60 rounded-xl text-xs text-indigo-200 flex items-center justify-between shadow-lg">
+            <div className="flex items-center gap-2">
+              <Activity className="w-4 h-4 text-indigo-400 flex-shrink-0 animate-pulse" />
+              <span>{parseLogs[parseLogs.length - 1]}</span>
+            </div>
+            <button
+              onClick={() => setParseLogs([])}
+              className="text-slate-400 hover:text-white text-[11px] underline ml-4"
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
+
+        {/* ========================================================================= */}
+        {/* TAB 1: KPI DASHBOARD */}
+        {/* ========================================================================= */}
+        {activeTab === "dashboard" && (
+          <div className="space-y-6">
+            {/* Top Stat Glow Cards */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {/* Total Active Payroll */}
+              <div className="p-4 rounded-2xl bg-slate-900/60 backdrop-blur-xl border border-slate-800/80 hover:border-emerald-500/50 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-emerald-500/10 group">
+                <div className="flex items-center justify-between text-xs font-semibold text-slate-400">
+                  <span>Net Payable Payroll</span>
+                  <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-400 group-hover:scale-110 transition">
+                    <DollarSign className="w-4 h-4" />
+                  </div>
+                </div>
+                <div className="mt-2 text-2xl sm:text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-300 font-mono">
+                  {formatINR(kpiStats.totalNet)}
+                </div>
+                <div className="mt-1 text-[11px] text-slate-400 flex items-center justify-between">
+                  <span>Base: {formatINR(kpiStats.totalBase)}</span>
+                  <span className="text-emerald-400 font-medium">Active Staff Only</span>
+                </div>
+              </div>
+
+              {/* Total Adjustments */}
+              <div className="p-4 rounded-2xl bg-slate-900/60 backdrop-blur-xl border border-slate-800/80 hover:border-cyan-500/50 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-cyan-500/10 group">
+                <div className="flex items-center justify-between text-xs font-semibold text-slate-400">
+                  <span>Net Total Adjustments (AD)</span>
+                  <div className="p-2 rounded-xl bg-cyan-500/10 text-cyan-400 group-hover:scale-110 transition">
+                    <Award className="w-4 h-4" />
+                  </div>
+                </div>
+                <div
+                  className={`mt-2 text-2xl sm:text-3xl font-extrabold font-mono ${
+                    kpiStats.totalAdjustment >= 0 ? "text-cyan-400" : "text-rose-400"
+                  }`}
+                >
+                  {kpiStats.totalAdjustment >= 0 ? "+" : ""}
+                  {formatINR(kpiStats.totalAdjustment)}
+                </div>
+                <div className="mt-1 text-[11px] text-slate-400">
+                  Bonus + OT Pay - Short Deductions
+                </div>
+              </div>
+
+              {/* Active Employees */}
+              <div className="p-4 rounded-2xl bg-slate-900/60 backdrop-blur-xl border border-slate-800/80 hover:border-indigo-500/50 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-indigo-500/10 group">
+                <div className="flex items-center justify-between text-xs font-semibold text-slate-400">
+                  <span>Active Headcount</span>
+                  <div className="p-2 rounded-xl bg-indigo-500/10 text-indigo-400 group-hover:scale-110 transition">
+                    <Users className="w-4 h-4" />
+                  </div>
+                </div>
+                <div className="mt-2 text-2xl sm:text-3xl font-extrabold text-white font-mono">
+                  {kpiStats.totalActiveEmp}{" "}
+                  <span className="text-xs text-slate-400 font-sans font-normal">
+                    / {master.length} roster
+                  </span>
+                </div>
+                <div className="mt-1 text-[11px] text-slate-400">
+                  {kpiStats.totalMonthlyWorkers} Duty Staff | {kpiStats.totalDayWorkers} Day Workers
+                </div>
+              </div>
+
+              {/* Sunday Extra Days */}
+              <div className="p-4 rounded-2xl bg-slate-900/60 backdrop-blur-xl border border-slate-800/80 hover:border-amber-500/50 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-amber-500/10 group">
+                <div className="flex items-center justify-between text-xs font-semibold text-slate-400">
+                  <span>Sunday OT Days Approved</span>
+                  <div className="p-2 rounded-xl bg-amber-500/10 text-amber-400 group-hover:scale-110 transition">
+                    <Sun className="w-4 h-4" />
+                  </div>
+                </div>
+                <div className="mt-2 text-2xl sm:text-3xl font-extrabold text-amber-400 font-mono">
+                  {kpiStats.totalSundayOTDays}{" "}
+                  <span className="text-xs text-slate-400 font-sans font-normal">Duty Shifts</span>
+                </div>
+                <div className="mt-1 text-[11px] text-slate-400">
+                  Bonus Pay: {formatINR(kpiStats.totalBonusPay)}
+                </div>
+              </div>
+            </div>
+
+            {/* Second Row Quick Metrics */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="p-3.5 rounded-xl bg-slate-900/40 border border-slate-800/70 flex items-center justify-between">
+                <div>
+                  <div className="text-[11px] text-slate-400">Cumulative Absent Days</div>
+                  <div className="text-lg font-bold text-rose-400 font-mono">
+                    {formatDec(kpiStats.totalAbsent, 1)} Days
+                  </div>
+                </div>
+                <div className="w-2.5 h-2.5 rounded-full bg-rose-500/80 animate-ping" />
+              </div>
+
+              <div className="p-3.5 rounded-xl bg-slate-900/40 border border-slate-800/70 flex items-center justify-between">
+                <div>
+                  <div className="text-[11px] text-slate-400">Short Hours Deduction</div>
+                  <div className="text-lg font-bold text-amber-400 font-mono">
+                    {formatDec(kpiStats.totalShortHours, 1)} Hrs
+                  </div>
+                </div>
+                <Clock className="w-4 h-4 text-amber-400" />
+              </div>
+
+              <div className="p-3.5 rounded-xl bg-slate-900/40 border border-slate-800/70 flex items-center justify-between">
+                <div>
+                  <div className="text-[11px] text-slate-400">Overtime Extra Hours</div>
+                  <div className="text-lg font-bold text-indigo-400 font-mono">
+                    +{formatDec(kpiStats.totalExtraHours, 1)} Hrs
+                  </div>
+                </div>
+                <TrendingUp className="w-4 h-4 text-indigo-400" />
+              </div>
+
+              <div className="p-3.5 rounded-xl bg-slate-900/40 border border-slate-800/70 flex items-center justify-between">
+                <div>
+                  <div className="text-[11px] text-slate-400">Attendance Bonus Paid</div>
+                  <div className="text-lg font-bold text-emerald-400 font-mono">
+                    {formatINR(kpiStats.totalBonusPay)}
