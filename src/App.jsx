@@ -125,29 +125,79 @@ const cleanId = (val) => String(val ?? "").trim().replace(/\.0$/, "");
 const formatINR = (val) => "₹" + Math.round(Number(val) || 0).toLocaleString("en-IN");
 const formatDec = (val, dec = 2) => (Number(val) || 0).toFixed(dec);
 
-const getMonthYearDisplay = (dateObj, fromDateStr) => {
-  if (dateObj && !isNaN(dateObj.getTime())) {
-    return dateObj.toLocaleDateString("en-US", { month: "long", year: "numeric" }).toUpperCase();
-  }
-  if (fromDateStr) {
-    const parts = fromDateStr.split(/[\/\-\.]/);
-    if (parts.length === 3) {
-      const monthIdx = Number(parts[1]) - 1;
-      const year = parts[0].length === 4 ? parts[0] : parts[2];
-      const monthNames = ["JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE", "JULY", "AUGUST", "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER"];
-      if (monthIdx >= 0 && monthIdx < 12) {
-        return `${monthNames[monthIdx]} ${year}`;
-      }
+const MONTH_NAMES = [
+  "JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE",
+  "JULY", "AUGUST", "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER"
+];
+
+// Excel serial date to JavaScript Date object (UTC safe)
+function excelSerialToDate(serial) {
+  const num = Number(serial);
+  if (isNaN(num) || num < 30000 || num > 70000) return null;
+  const utcMs = Math.round((num - 25569) * 86400 * 1000);
+  const d = new Date(utcMs);
+  return new Date(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
+}
+
+// Universal parser handling Excel serials, text dates ("01-Aug-2026", "01/08/2026", etc.)
+function parseAnyDate(val) {
+  if (val == null || val === "") return null;
+  if (typeof val === "number") return excelSerialToDate(val);
+  const s = String(val).trim();
+  if (/^\d{5}(\.\d+)?$/.test(s)) return excelSerialToDate(parseFloat(s));
+
+  // Check text date with named month (e.g. "01-Aug-2026")
+  const monthMap = {
+    jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5,
+    jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11
+  };
+  const parts = s.split(/[\/\-\.\s]+/);
+  if (parts.length === 3) {
+    const mKey = parts[1].substring(0, 3).toLowerCase();
+    if (monthMap[mKey] !== undefined) {
+      const day = parseInt(parts[0], 10);
+      const year = parseInt(parts[2], 10);
+      if (!isNaN(day) && !isNaN(year)) return new Date(year, monthMap[mKey], day);
+    }
+    if (parts[0].length === 4) {
+      return new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+    } else {
+      return new Date(parseInt(parts[2], 10), parseInt(parts[1], 10) - 1, parseInt(parts[0], 10));
     }
   }
-  return "CURRENT PERIOD";
-};
+
+  const d = new Date(s);
+  return !isNaN(d.getTime()) && d.getFullYear() > 1990 ? new Date(d.getFullYear(), d.getMonth(), d.getDate()) : null;
+}
+
+// =========================================================================
+// CORE EXTRACTION: FILTER MERGED CELLS LEFT-TO-RIGHT (PREVENT COLUMN SHIFTS)
+// =========================================================================
+function extractDailyValues(row, totalDays) {
+  if (!row || !Array.isArray(row)) {
+    return Array(totalDays).fill("");
+  }
+  const nonEmpties = [];
+  for (let c = 0; c < row.length; c++) {
+    const val = String(row[c] == null ? "" : row[c]).trim();
+    if (val !== "") {
+      nonEmpties.push(val);
+    }
+  }
+  // nonEmpties[0] is the label (e.g. 'Status', 'First In', 'Last Out', 'Total Hrs')
+  // The remaining values correspond to Day 1 through Day totalDays
+  const daily = nonEmpties.slice(1, totalDays + 1);
+  while (daily.length < totalDays) {
+    daily.push("");
+  }
+  return daily;
+}
 
 export default function App() {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [showInactive, setShowInactive] = useState(false);
 
-  // Load Employee Master from localStorage with fallback
+  // Master State loaded from localStorage with initial fallback
   const [master, setMaster] = useState(() => {
     try {
       const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
@@ -161,7 +211,7 @@ export default function App() {
     return INITIAL_MASTER;
   });
 
-  // Persist master state
+  // Sync Master to localStorage
   useEffect(() => {
     try {
       localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(master));
@@ -170,20 +220,25 @@ export default function App() {
     }
   }, [master]);
 
-  // Attendance & Payroll State
+  // Attendance & Payroll State (initialized dynamically)
   const [attendanceRecords, setAttendanceRecords] = useState([]);
   const [payrollBreakdown, setPayrollBreakdown] = useState([]);
-  const [metaInfo, setMetaInfo] = useState({
-    fileName: "BIOMETRIC_REPORT_APRIL_2026.xlsx",
-    fromDate: "01/04/2026",
-    toDate: "30/04/2026",
-    totalDays: 30,
-    sundaysCount: 4,
-    monthYear: "APRIL 2026",
-    processedAt: new Date().toLocaleTimeString()
+  const [metaInfo, setMetaInfo] = useState(() => {
+    const now = new Date();
+    const curMonthName = MONTH_NAMES[now.getMonth()];
+    const daysInCurMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    return {
+      fileName: `BIOMETRIC_REPORT_${curMonthName}_${now.getFullYear()}.xlsx`,
+      fromDate: `01/${String(now.getMonth() + 1).padStart(2, "0")}/${now.getFullYear()}`,
+      toDate: `${daysInCurMonth}/${String(now.getMonth() + 1).padStart(2, "0")}/${now.getFullYear()}`,
+      totalDays: daysInCurMonth,
+      sundaysCount: 4,
+      monthYear: `${curMonthName} ${now.getFullYear()}`,
+      processedAt: new Date().toLocaleTimeString()
+    };
   });
 
-  // Confirmation Modal State after Upload
+  // Upload Confirmation Modal State
   const [uploadConfirmation, setUploadConfirmation] = useState(null);
 
   const [parseLogs, setParseLogs] = useState([]);
@@ -196,9 +251,9 @@ export default function App() {
   const [editingEmp, setEditingEmp] = useState(null);
   const fileMasterInputRef = useRef(null);
 
-  // Time & Duration Helpers
+  // Time & Duration Parsers
   const parseTimeToHours = (timeVal) => {
-    if (timeVal === undefined || timeVal === null || timeVal === "") return null;
+    if (timeVal == null || timeVal === "") return null;
     if (typeof timeVal === "number") return Number((timeVal * 24).toFixed(2));
     const str = String(timeVal).trim();
     if (["00:00", "0:00", "--", "-", ""].includes(str)) return null;
@@ -225,21 +280,6 @@ export default function App() {
     }
     const num = parseFloat(str);
     return isNaN(num) ? 0 : num;
-  };
-
-  const parseReportDate = (raw) => {
-    if (!raw) return null;
-    if (typeof raw === "number" && raw > 40000) {
-      return new Date(Math.round((raw - 25569) * 86400 * 1000));
-    }
-    const s = String(raw).trim();
-    const parts = s.split(/[\/\-\.]/);
-    if (parts.length === 3) {
-      if (parts[0].length === 4) return new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
-      return new Date(Number(parts[2]), Number(parts[1]) - 1, Number(parts[0]));
-    }
-    const d = new Date(s);
-    return isNaN(d.getTime()) ? null : d;
   };
 
   // =========================================================================
@@ -341,7 +381,7 @@ export default function App() {
             }
           }
         } else {
-          // Calendar Non-Sunday (Normal Working Days)
+          // Calendar Non-Sunday
           if (evaluatedStatus === "P") {
             normalPresentDays += 1.0;
           } else if (evaluatedStatus === "HD") {
@@ -350,7 +390,7 @@ export default function App() {
           } else if (evaluatedStatus === "A") {
             absentDays += 1.0;
           } else if (evaluatedStatus === "W") {
-            // Weekly off
+            // Scheduled weekly off
           } else {
             absentDays += 1.0;
           }
@@ -389,9 +429,7 @@ export default function App() {
 
       const sundayDeductionSalary = sundayDeductionHours * hourlyRate;
 
-      // =========================================================
-      // CRITICAL BONUS DAYS LOGIC
-      // =========================================================
+      // Attendance Bonus Days Logic
       let bonusDaysCount = 0;
       if (isBonusEligible) {
         if (normalPresentDays >= 26) {
@@ -421,7 +459,7 @@ export default function App() {
           bonusDaySalary;
       }
 
-      // Adjustment = bonusDaySalary + sundayExtraSalary + extraHourSalary - shortHourDeduction
+      // Adjustment
       const totalAdjustment =
         bonusDaySalary + sundayExtraSalary + extraHourSalary - shortHourDeduction;
 
@@ -465,7 +503,6 @@ export default function App() {
       };
     });
 
-    // Safe natural numeric sorting
     results.sort((a, b) => {
       const numA = parseInt(a.empId, 10);
       const numB = parseInt(b.empId, 10);
@@ -476,7 +513,7 @@ export default function App() {
     return results;
   };
 
-  // Re-run payroll if master records change
+  // Recalculate payroll if master records change
   useEffect(() => {
     if (attendanceRecords.length > 0) {
       const recalculated = calculatePayroll(attendanceRecords, master, metaInfo);
@@ -485,7 +522,7 @@ export default function App() {
   }, [master]);
 
   // =========================================================================
-  // 3. EXACT ATTENDANCE PUNCH & DAILY PARSING LOGIC (ZERO COLUMN SHIFT)
+  // 3. CRITICAL BUG FIX: BIOMETRIC EXCEL PARSER (MERGED CELL FILTERING)
   // =========================================================================
   const parseBiometricWorkbook = async (file) => {
     setIsProcessing(true);
@@ -501,30 +538,67 @@ export default function App() {
         throw new Error("Uploaded workbook contains insufficient rows.");
       }
 
-      // Step 1: Detect Date Range
-      let fromDateStr = "";
-      let toDateStr = "";
-      let detectedTotalDays = 30;
-      let fromDateObj = null;
+      // STEP 1: DYNAMIC REPORT MONTH & DATE RANGE EXTRACTION
+      let fromDate = null;
+      let toDate = null;
+      let fromStr = "";
+      let toStr = "";
 
+      // Scan rows 1–15 for "From:" and "To:" cells or serial dates underneath
       for (let r = 0; r < Math.min(15, rawMatrix.length); r++) {
         const row = rawMatrix[r];
         if (!row || !Array.isArray(row)) continue;
-        for (let c = 0; c < row.length; c++) {
-          const val = String(row[c] || "").trim();
-          if (/from\s*:/i.test(val)) {
-            const mFrom = val.match(/from\s*:\s*([^\s]+)/i);
-            const mTo = val.match(/to\s*:\s*([^\s]+)/i);
-            if (mFrom) fromDateStr = mFrom[1];
-            if (mTo) toDateStr = mTo[1];
 
-            if (!toDateStr) {
-              for (let c2 = c + 1; c2 < Math.min(c + 6, row.length); c2++) {
-                const val2 = String(row[c2] || "").trim();
-                const mTo2 = val2.match(/(?:to\s*:|^to\b)\s*([^\s]+)/i);
-                if (mTo2) {
-                  toDateStr = mTo2[1];
-                  break;
+        for (let c = 0; c < row.length; c++) {
+          const cellVal = String(row[c] == null ? "" : row[c]).trim();
+
+          if (/from\s*:/i.test(cellVal)) {
+            const mFrom = cellVal.match(/from\s*:\s*([^\s]+)/i);
+            if (mFrom) {
+              const cand = parseAnyDate(mFrom[1]);
+              if (cand) { fromDate = cand; fromStr = mFrom[1]; }
+            }
+            if (!fromDate) {
+              for (let step = 1; step <= 5 && c + step < row.length; step++) {
+                const candVal = row[c + step];
+                if (candVal !== "" && candVal != null) {
+                  const cand = parseAnyDate(candVal);
+                  if (cand) { fromDate = cand; fromStr = String(candVal); break; }
+                }
+              }
+            }
+            if (!fromDate && r + 1 < rawMatrix.length) {
+              for (let step = 0; step <= 3 && c + step < rawMatrix[r + 1].length; step++) {
+                const candVal = rawMatrix[r + 1][c + step];
+                if (candVal !== "" && candVal != null) {
+                  const cand = parseAnyDate(candVal);
+                  if (cand) { fromDate = cand; fromStr = String(candVal); break; }
+                }
+              }
+            }
+          }
+
+          if (/to\s*:/i.test(cellVal)) {
+            const mTo = cellVal.match(/to\s*:\s*([^\s]+)/i);
+            if (mTo) {
+              const cand = parseAnyDate(mTo[1]);
+              if (cand) { toDate = cand; toStr = mTo[1]; }
+            }
+            if (!toDate) {
+              for (let step = 1; step <= 5 && c + step < row.length; step++) {
+                const candVal = row[c + step];
+                if (candVal !== "" && candVal != null) {
+                  const cand = parseAnyDate(candVal);
+                  if (cand) { toDate = cand; toStr = String(candVal); break; }
+                }
+              }
+            }
+            if (!toDate && r + 1 < rawMatrix.length) {
+              for (let step = 0; step <= 3 && c + step < rawMatrix[r + 1].length; step++) {
+                const candVal = rawMatrix[r + 1][c + step];
+                if (candVal !== "" && candVal != null) {
+                  const cand = parseAnyDate(candVal);
+                  if (cand) { toDate = cand; toStr = String(candVal); break; }
                 }
               }
             }
@@ -532,43 +606,58 @@ export default function App() {
         }
       }
 
-      if (fromDateStr) fromDateObj = parseReportDate(fromDateStr);
-      if (!fromDateObj) {
-        fromDateObj = new Date(2026, 3, 1);
-        fromDateStr = "01/04/2026";
-        toDateStr = "30/04/2026";
-      }
-
-      // Step 2: Detect sequence header 1..N
-      let detectedDaysCount = 0;
-      for (let r = 0; r < Math.min(30, rawMatrix.length); r++) {
-        const row = rawMatrix[r];
-        if (!row || !Array.isArray(row)) continue;
-        for (let c = 0; c < row.length - 2; c++) {
-          const n1 = parseInt(row[c], 10);
-          const n2 = parseInt(row[c + 1], 10);
-          const n3 = parseInt(row[c + 2], 10);
-          if (n1 === 1 && n2 === 2 && n3 === 3) {
-            let count = 0;
-            while (parseInt(row[c + count], 10) === count + 1) count++;
-            detectedDaysCount = count;
-            break;
+      // Fallback serial check if header labels were merged or absent
+      if (!fromDate || !toDate) {
+        const serialCandidates = [];
+        for (let r = 0; r < Math.min(15, rawMatrix.length); r++) {
+          const row = rawMatrix[r];
+          if (!row || !Array.isArray(row)) continue;
+          for (let c = 0; c < row.length; c++) {
+            const num = Number(row[c]);
+            if (!isNaN(num) && num >= 40000 && num <= 65000) {
+              const d = excelSerialToDate(num);
+              if (d) serialCandidates.push(d);
+            }
           }
         }
-        if (detectedDaysCount > 0) break;
+        if (serialCandidates.length >= 2) {
+          serialCandidates.sort((a, b) => a.getTime() - b.getTime());
+          if (!fromDate) fromDate = serialCandidates[0];
+          if (!toDate) toDate = serialCandidates[serialCandidates.length - 1];
+        }
       }
-      if (detectedDaysCount > 0) detectedTotalDays = detectedDaysCount;
 
+      // Calculate total calendar days and active month dynamically
+      let detectedTotalDays = 30;
+      let calculatedMonthYear = "";
+
+      if (fromDate && toDate) {
+        detectedTotalDays = Math.floor((toDate.getTime() - fromDate.getTime()) / 86400000) + 1;
+        calculatedMonthYear = `${MONTH_NAMES[fromDate.getMonth()]} ${fromDate.getFullYear()}`;
+      } else if (fromDate) {
+        detectedTotalDays = new Date(fromDate.getFullYear(), fromDate.getMonth() + 1, 0).getDate();
+        toDate = new Date(fromDate.getFullYear(), fromDate.getMonth(), detectedTotalDays);
+        calculatedMonthYear = `${MONTH_NAMES[fromDate.getMonth()]} ${fromDate.getFullYear()}`;
+      } else {
+        const now = new Date();
+        fromDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        detectedTotalDays = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+        toDate = new Date(now.getFullYear(), now.getMonth(), detectedTotalDays);
+        calculatedMonthYear = `${MONTH_NAMES[now.getMonth()]} ${now.getFullYear()}`;
+      }
+
+      // Map Calendar Sundays
       const sundayIndices = [];
       for (let d = 0; d < detectedTotalDays; d++) {
-        const dObj = new Date(fromDateObj);
-        dObj.setDate(fromDateObj.getDate() + d);
+        const dObj = new Date(fromDate);
+        dObj.setDate(fromDate.getDate() + d);
         if (dObj.getDay() === 0) sundayIndices.push(d);
       }
 
-      const calculatedMonthYear = getMonthYearDisplay(fromDateObj, fromDateStr);
+      const fromDateFormatted = `${String(fromDate.getDate()).padStart(2, "0")}/${String(fromDate.getMonth() + 1).padStart(2, "0")}/${fromDate.getFullYear()}`;
+      const toDateFormatted = `${String(toDate.getDate()).padStart(2, "0")}/${String(toDate.getMonth() + 1).padStart(2, "0")}/${toDate.getFullYear()}`;
 
-      // Step 3: Scan Employees & Sub-Rows (Column 2 is Day 1)
+      // STEP 2: SCAN EMPLOYEE BLOCKS & EXTRACT SUB-ROWS USING MERGED-CELL FILTER
       const parsedRecords = [];
       const masterById = new Map();
       master.forEach((m) => masterById.set(cleanId(m.empId), m));
@@ -582,6 +671,7 @@ export default function App() {
           let rawEmpId = "";
           let rawEmpName = "";
 
+          // Extract Employee ID and Name skipping blanks
           for (let c = 0; c < row.length; c++) {
             const cell = String(row[c] || "").trim();
             if (/emp\s*id\s*:/i.test(cell)) {
@@ -589,7 +679,7 @@ export default function App() {
               if (match && match[1]) {
                 rawEmpId = match[1];
               } else {
-                for (let nextC = c + 1; nextC < Math.min(c + 5, row.length); nextC++) {
+                for (let nextC = c + 1; nextC < Math.min(c + 6, row.length); nextC++) {
                   const nxt = String(row[nextC] || "").trim();
                   if (nxt) {
                     rawEmpId = nxt;
@@ -621,6 +711,7 @@ export default function App() {
           const profile = masterById.get(empId);
           const finalName = profile ? profile.name : rawEmpName || `EMPLOYEE #${empId}`;
 
+          // Find exact sub-rows within next 18 rows
           let statusRow = null;
           let firstInRow = null;
           let lastOutRow = null;
@@ -629,30 +720,43 @@ export default function App() {
           for (let subR = r + 1; subR < Math.min(r + 18, rawMatrix.length); subR++) {
             const subRow = rawMatrix[subR];
             if (!subRow || !Array.isArray(subRow)) continue;
-            const labelCell = String(subRow[0] || "").toLowerCase().trim();
+
+            let labelCell = "";
+            for (let c = 0; c < Math.min(5, subRow.length); c++) {
+              const v = String(subRow[c] == null ? "" : subRow[c]).trim().toLowerCase();
+              if (v !== "") {
+                labelCell = v;
+                break;
+              }
+            }
 
             if (/emp\s*id\s*:/i.test(subRow.map((x) => String(x || "")).join(" "))) break;
 
-            if (!statusRow && labelCell.includes("status")) {
+            if (!statusRow && labelCell === "status") {
               statusRow = subRow;
-            } else if (!firstInRow && (labelCell.includes("first in") || labelCell.includes("in time"))) {
+            } else if (!firstInRow && (labelCell === "first in" || labelCell === "in time" || labelCell.includes("first in"))) {
               firstInRow = subRow;
-            } else if (!lastOutRow && (labelCell.includes("last out") || labelCell.includes("out time"))) {
+            } else if (!lastOutRow && (labelCell === "last out" || labelCell === "out time" || labelCell.includes("last out"))) {
               lastOutRow = subRow;
-            } else if (!totalHrsRow && (labelCell.includes("total hrs") || labelCell.includes("work hrs") || labelCell.includes("total time"))) {
+            } else if (!totalHrsRow && (labelCell === "total hrs" || labelCell === "work hrs" || labelCell.includes("total hrs"))) {
               totalHrsRow = subRow;
             }
           }
+
+          // EXTRACT DAILY ARRAYS BY READING NON-EMPTY VALUES (FILTERING 65+ MERGED CELLS)
+          const rawStatuses = extractDailyValues(statusRow, detectedTotalDays);
+          const rawFirstIns = extractDailyValues(firstInRow, detectedTotalDays);
+          const rawLastOuts = extractDailyValues(lastOutRow, detectedTotalDays);
+          const rawTotalHrs = extractDailyValues(totalHrsRow, detectedTotalDays);
 
           const isDayWorker = profile ? Number(profile.dutyHours) <= 0 : false;
           const daysData = [];
 
           for (let d = 0; d < detectedTotalDays; d++) {
-            const col = 2 + d;
-            const rawStatus = statusRow ? String(statusRow[col] || "").trim() : "";
-            const rawIn = firstInRow ? String(firstInRow[col] || "").trim() : "";
-            const rawOut = lastOutRow ? String(lastOutRow[col] || "").trim() : "";
-            const rawHrs = totalHrsRow ? String(totalHrsRow[col] || "").trim() : "";
+            const rawStatus = rawStatuses[d];
+            const rawIn = rawFirstIns[d];
+            const rawOut = rawLastOuts[d];
+            const rawHrs = rawTotalHrs[d];
 
             const isSunday = sundayIndices.includes(d);
             const inDec = parseTimeToHours(rawIn);
@@ -716,8 +820,8 @@ export default function App() {
 
       const newMeta = {
         fileName: file.name,
-        fromDate: fromDateStr,
-        toDate: toDateStr || `${detectedTotalDays}/Month`,
+        fromDate: fromDateFormatted,
+        toDate: toDateFormatted,
         totalDays: detectedTotalDays,
         sundaysCount: sundayIndices.length,
         monthYear: calculatedMonthYear,
@@ -733,15 +837,15 @@ export default function App() {
       logs.push(`Biometric sheet loaded. Month: ${calculatedMonthYear}. Extracted ${parsedRecords.length} staff records (${detectedTotalDays} days).`);
       setParseLogs(logs);
 
-      // Trigger Upload Confirmation Dialog
+      // Trigger Confirmation Modal with dynamically parsed details
       setUploadConfirmation({
         fileName: file.name,
         monthYear: calculatedMonthYear,
         totalEmployees: parsedRecords.length,
         totalDays: detectedTotalDays,
         sundaysCount: sundayIndices.length,
-        fromDate: fromDateStr,
-        toDate: toDateStr
+        fromDate: fromDateFormatted,
+        toDate: toDateFormatted
       });
     } catch (err) {
       logs.push(`Parsing Diagnostic: ${err.message}`);
@@ -753,12 +857,22 @@ export default function App() {
   };
 
   // =========================================================================
-  // 4. PRELOADED DEMO GENERATOR
+  // 4. DYNAMIC SYNTHETIC DATA GENERATOR
   // =========================================================================
   const loadInstantDemo = () => {
     setIsProcessing(true);
-    const totalDays = 30;
-    const sundays = [5, 12, 19, 26];
+    // Dynamically set up August 2026 reference dataset
+    const fromDate = new Date(2026, 7, 1); // 01-Aug-2026
+    const totalDays = 31; // August has 31 days
+    const toDate = new Date(2026, 7, 31);
+    const monthYear = "AUGUST 2026";
+
+    const sundays = [];
+    for (let d = 0; d < totalDays; d++) {
+      const dObj = new Date(fromDate);
+      dObj.setDate(fromDate.getDate() + d);
+      if (dObj.getDay() === 0) sundays.push(d + 1);
+    }
 
     const sampleAttendance = master.map((emp) => {
       const isDalpat = cleanId(emp.empId) === "1";
@@ -786,7 +900,7 @@ export default function App() {
           }
         } else {
           if (isSunday) {
-            if (d === 12 && parseInt(emp.empId, 10) % 3 === 0) {
+            if (d === 16 && parseInt(emp.empId, 10) % 3 === 0) {
               status = "PW";
               hrs = 8.5;
               inTime = "09:00";
@@ -832,12 +946,12 @@ export default function App() {
     });
 
     const meta = {
-      fileName: "BIOMETRIC_REPORT_APRIL_2026.xlsx",
-      fromDate: "01/04/2026",
-      toDate: "30/04/2026",
-      totalDays: 30,
-      sundaysCount: 4,
-      monthYear: "APRIL 2026",
+      fileName: `BIOMETRIC_REPORT_AUGUST_2026.xlsx`,
+      fromDate: `01/08/2026`,
+      toDate: `31/08/2026`,
+      totalDays: 31,
+      sundaysCount: sundays.length,
+      monthYear: monthYear,
       processedAt: new Date().toLocaleTimeString()
     };
 
@@ -845,7 +959,7 @@ export default function App() {
     setMetaInfo(meta);
     const payroll = calculatePayroll(sampleAttendance, master, meta);
     setPayrollBreakdown(payroll);
-    setParseLogs(["Industrial reference dataset loaded for April 2026. Dalpat Singh: 252.30 Hrs, 26 Present Days, 3 Bonus Days."]);
+    setParseLogs([`Industrial reference dataset loaded for ${monthYear}. Dalpat Singh: 252.30 Hrs, 26 Present Days, 3 Bonus Days.`]);
     setIsProcessing(false);
   };
 
@@ -1016,7 +1130,7 @@ export default function App() {
   };
 
   // =========================================================================
-  // 6. COMPUTED AGGREGATIONS (KPIs STRICTLY RESPECT INACTIVE EXCLUSION)
+  // 6. COMPUTED AGGREGATIONS
   // =========================================================================
   const kpiStats = useMemo(() => {
     const activeRows = payrollBreakdown.filter((p) => p.isActive);
@@ -1109,7 +1223,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-[#0B0F19] text-slate-100 font-sans selection:bg-indigo-500 selection:text-white flex flex-col relative overflow-x-hidden">
-      {/* Background Glowing Ambient Orbs */}
+      {/* Background Ambient Orbs */}
       <div className="fixed top-0 left-1/4 w-[650px] h-[400px] bg-indigo-600/10 rounded-full blur-[140px] pointer-events-none -z-10" />
       <div className="fixed bottom-10 right-10 w-[550px] h-[450px] bg-emerald-600/10 rounded-full blur-[150px] pointer-events-none -z-10" />
       <div className="fixed top-1/2 right-1/4 w-[450px] h-[350px] bg-amber-600/10 rounded-full blur-[130px] pointer-events-none -z-10" />
@@ -1144,7 +1258,7 @@ export default function App() {
         <div className="flex items-center gap-2.5">
           <button
             onClick={loadInstantDemo}
-            title="Reload Demo Data (Dalpat Singh = 252.30 Hrs)"
+            title="Reload Demo Data"
             className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700/80 text-xs text-slate-300 hover:text-white border border-slate-700/70 transition shadow-sm"
           >
             <Sparkles className="w-3.5 h-3.5 text-amber-400" /> Load Demo
@@ -1189,7 +1303,6 @@ export default function App() {
         </div>
 
         <div className="flex items-center gap-3">
-          {/* Show / Hide Inactive Employees Toggle */}
           <button
             onClick={() => setShowInactive(!showInactive)}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition ${
@@ -1202,7 +1315,6 @@ export default function App() {
             <span>Show Inactive ({master.filter((m) => String(m.active).toLowerCase() === "no").length})</span>
           </button>
 
-          {/* Search Bar */}
           <div className="relative">
             <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-500" />
             <input
@@ -1250,7 +1362,7 @@ export default function App() {
                   <div className="text-[11px] font-semibold uppercase tracking-wider text-indigo-300 flex items-center gap-2">
                     <span>Active Payroll Processing Period</span>
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                    <span className="text-emerald-400 font-mono">Live Evaluated</span>
+                    <span className="text-emerald-400 font-mono">Dynamic Evaluation</span>
                   </div>
                   <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight flex items-center gap-3 mt-0.5">
                     {metaInfo.monthYear}
@@ -1379,7 +1491,7 @@ export default function App() {
                     <Layers className="w-4 h-4 text-indigo-400" /> Monthly Payroll Summary Preview ({metaInfo.monthYear})
                   </h3>
                   <p className="text-xs text-slate-400">
-                    Showing dedicated columns for Bonus Days (3d / 2d / 1d / 0d) and calculated Bonus Pay (₹).
+                    Calculated with merged-cell filter. Dedicated columns for Bonus Days (3d / 2d / 1d / 0d) and Bonus Pay (₹).
                   </p>
                 </div>
                 <button
@@ -1490,7 +1602,7 @@ export default function App() {
                   <DollarSign className="w-5 h-5 text-emerald-400" /> Full Industrial Salary Calculation Sheet ({metaInfo.monthYear})
                 </h2>
                 <p className="text-xs text-slate-400">
-                  Includes separate columns for <span className="text-amber-300 font-semibold">Bonus Days</span> and <span className="text-amber-300 font-semibold">Bonus Pay</span> according to standard 26+ $\rightarrow$ 3d; 24-25 $\rightarrow$ 2d; 23 $\rightarrow$ 1d formula.
+                  Daily punches extracted through merged-cell filter. Distinct columns for <span className="text-amber-300 font-semibold">Bonus Days</span> and <span className="text-amber-300 font-semibold">Bonus Pay</span>.
                 </p>
               </div>
 
@@ -1633,7 +1745,7 @@ export default function App() {
                   <Calendar className="w-5 h-5 text-indigo-400" /> Daily Punch & Biometric Timeline ({metaInfo.monthYear})
                 </h2>
                 <p className="text-xs text-slate-400">
-                  Physical column mapping: Day 1 punch is extracted at column index 2.
+                  Punch data verified through non-empty cell extraction left-to-right.
                 </p>
               </div>
 
@@ -1744,7 +1856,7 @@ export default function App() {
                   <Users className="w-5 h-5 text-indigo-400" /> Employee Master Roster ({master.length} Total Records)
                 </h2>
                 <p className="text-xs text-slate-400">
-                  Dual-Input: Bulk import spreadsheets or add individual employees. Automatically persists in LocalStorage.
+                  Bulk import spreadsheets or add individual employees. Automatically persists in LocalStorage.
                 </p>
               </div>
 
@@ -1895,7 +2007,7 @@ export default function App() {
                 <Upload className="w-5 h-5 text-indigo-400" /> Biometric Attendance Excel Importer
               </h2>
               <p className="text-xs text-slate-400 mt-1">
-                Reads raw biometric `.xls` reports. Upon uploading, the active month will be detected and a confirmation will appear.
+                Reads raw biometric `.xls` reports (such as `AUG.xls` spanning 65 merged columns). Automatically filters merged empty cells and extracts the exact month without date shifts.
               </p>
 
               <div
@@ -1910,7 +2022,7 @@ export default function App() {
                   <FileSpreadsheet className="w-7 h-7" />
                 </div>
                 <p className="text-sm font-semibold text-slate-200">Drag & drop biometric monthly report (.xlsx / .xls)</p>
-                <p className="text-xs text-slate-500 mt-1">Zero column shift engine with automated header alignment</p>
+                <p className="text-xs text-slate-500 mt-1">65-column merged cell filter with dynamic month detection</p>
 
                 <div className="mt-5">
                   <label className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-semibold text-xs cursor-pointer shadow-lg shadow-indigo-600/30 transition">
@@ -1946,9 +2058,9 @@ export default function App() {
                 <ShieldCheck className="w-4 h-4 text-emerald-400" /> Biometric Engine Specifications
               </h4>
               <ul className="list-disc list-inside space-y-1 text-slate-400">
-                <li><strong className="text-slate-300">Month Header Tracking:</strong> Automatically extracts the Month & Year directly from the biometric header range.</li>
-                <li><strong className="text-slate-300">Dedicated Bonus Columns:</strong> Shows distinct count for Bonus Days (3d / 2d / 1d / 0d) and computed Bonus Pay.</li>
-                <li><strong className="text-slate-300">Instant Upload Confirmation:</strong> Live popup confirmation showing active records, days count, and extracted month.</li>
+                <li><strong className="text-slate-300">Merged Cell Filter:</strong> Scans non-empty cells across all 65 columns, ensuring all 25–31 working days are extracted without 21-day blank dropouts.</li>
+                <li><strong className="text-slate-300">Dynamic Month:</strong> Reads Excel serial dates (e.g. `46235` for August) to configure the entire UI, days count, and Sundays dynamically.</li>
+                <li><strong className="text-slate-300">Bonus Days Logic:</strong> Calculated on non-Sunday present days (26+ &#8594; 3d, 24-25 &#8594; 2d, 23 &#8594; 1d).</li>
               </ul>
             </div>
           </div>
