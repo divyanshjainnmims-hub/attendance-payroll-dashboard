@@ -130,48 +130,151 @@ const MONTH_NAMES = [
   "JULY", "AUGUST", "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER"
 ];
 
-// Excel serial date to JavaScript Date object (UTC safe)
-function excelSerialToDate(serial) {
-  const num = Number(serial);
-  if (isNaN(num) || num < 30000 || num > 70000) return null;
-  const utcMs = Math.round((num - 25569) * 86400 * 1000);
-  const d = new Date(utcMs);
-  return new Date(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
-}
+// =========================================================================
+// STRICT REPORT PERIOD PARSER (IGNORES PRINT DATE, STRICT 1-31 DAY GUARDRAIL)
+// =========================================================================
+function extractReportPeriod(gridData, uploadedFileName) {
+  let fromDate = null;
+  let toDate = null;
 
-// Universal parser handling Excel serials, text dates ("01-Aug-2026", "01/08/2026", etc.)
-function parseAnyDate(val) {
-  if (val == null || val === "") return null;
-  if (typeof val === "number") return excelSerialToDate(val);
-  const s = String(val).trim();
-  if (/^\d{5}(\.\d+)?$/.test(s)) return excelSerialToDate(parseFloat(s));
-
-  // Check text date with named month (e.g. "01-Aug-2026")
   const monthMap = {
     jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5,
     jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11
   };
-  const parts = s.split(/[\/\-\.\s]+/);
-  if (parts.length === 3) {
-    const mKey = parts[1].substring(0, 3).toLowerCase();
-    if (monthMap[mKey] !== undefined) {
-      const day = parseInt(parts[0], 10);
-      const year = parseInt(parts[2], 10);
-      if (!isNaN(day) && !isNaN(year)) return new Date(year, monthMap[mKey], day);
+
+  const parseCellDate = (val) => {
+    if (val === null || val === undefined || val === "") return null;
+
+    // Excel serial date number (e.g. 46266 for 01-Sep-2026)
+    if (typeof val === "number" && val > 40000 && val < 60000) {
+      const utcDays = Math.floor(val - 25569);
+      const d = new Date(utcDays * 86400 * 1000);
+      return new Date(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
     }
-    if (parts[0].length === 4) {
-      return new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
-    } else {
-      return new Date(parseInt(parts[2], 10), parseInt(parts[1], 10) - 1, parseInt(parts[0], 10));
+
+    const str = String(val).trim();
+
+    // Check string numeric serial (e.g. "46266")
+    if (/^\d{5}(\.\d+)?$/.test(str)) {
+      const num = parseFloat(str);
+      if (num > 40000 && num < 60000) {
+        const utcDays = Math.floor(num - 25569);
+        const d = new Date(utcDays * 86400 * 1000);
+        return new Date(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
+      }
+    }
+
+    // Match DD-MMM-YYYY (e.g., "01-Sep-2026" or "30-Sep-2026")
+    const dmmmMatch = str.match(/^(\d{1,2})[-/ ]([A-Za-z]{3,9})[-/ ](\d{4})$/);
+    if (dmmmMatch) {
+      const day = parseInt(dmmmMatch[1], 10);
+      const mKey = dmmmMatch[2].toLowerCase().slice(0, 3);
+      const year = parseInt(dmmmMatch[3], 10);
+      if (monthMap[mKey] !== undefined && !isNaN(day) && !isNaN(year)) {
+        return new Date(year, monthMap[mKey], day);
+      }
+    }
+
+    // Match DD-MM-YYYY or DD/MM/YYYY
+    const dmy = str.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/);
+    if (dmy) {
+      return new Date(Number(dmy[3]), Number(dmy[2]) - 1, Number(dmy[1]));
+    }
+
+    // Standard JavaScript Date fallback
+    const d = new Date(str);
+    if (!isNaN(d.getTime()) && !/^\d+$/.test(str) && d.getFullYear() > 1990 && d.getFullYear() < 2100) {
+      return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    }
+
+    return null;
+  };
+
+  // Scan rows 0 to 14 where From/To headers exist
+  for (let r = 0; r < Math.min(gridData.length, 15); r++) {
+    const row = gridData[r] || [];
+
+    // CRITICAL: SKIP any row that contains "print date"
+    const isPrintRow = row.some((cell) =>
+      String(cell || "").toLowerCase().includes("print date")
+    );
+    if (isPrintRow) continue;
+
+    for (let c = 0; c < row.length; c++) {
+      const cellText = String(row[c] || "").trim().toLowerCase();
+
+      // Look only for exact "from:" or "from" or embedded "from: date"
+      if (cellText === "from:" || cellText === "from" || cellText.startsWith("from:")) {
+        const inlineMatch = cellText.match(/from\s*:\s*([^\s]+)/i);
+        if (inlineMatch) {
+          const cand = parseCellDate(inlineMatch[1]);
+          if (cand) fromDate = cand;
+        }
+        if (!fromDate) {
+          for (let cc = c + 1; cc <= Math.min(c + 4, row.length - 1); cc++) {
+            const cand = parseCellDate(row[cc]);
+            if (cand) { fromDate = cand; break; }
+          }
+        }
+      }
+
+      // Look only for exact "to" or "to:" or embedded "to date"
+      if (cellText === "to" || cellText === "to:" || cellText.startsWith("to:") || cellText.startsWith("to ")) {
+        const inlineMatch = cellText.match(/to\s*:?\s*([^\s]+)/i);
+        if (inlineMatch) {
+          const cand = parseCellDate(inlineMatch[1]);
+          if (cand) toDate = cand;
+        }
+        if (!toDate) {
+          for (let cc = c + 1; cc <= Math.min(c + 4, row.length - 1); cc++) {
+            const cand = parseCellDate(row[cc]);
+            if (cand) { toDate = cand; break; }
+          }
+        }
+      }
+    }
+    if (fromDate && toDate) break;
+  }
+
+  // Fallback to filename if header search fails (e.g. "SEP.2026.xls", "AUG.xls")
+  if (!fromDate || !toDate) {
+    const fname = (uploadedFileName || "").toUpperCase();
+    const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+    const mIdx = months.findIndex((m) => fname.includes(m));
+    const yrMatch = fname.match(/\b(20\d\d)\b/);
+    const year = yrMatch ? Number(yrMatch[1]) : 2026;
+    if (mIdx !== -1) {
+      if (!fromDate) fromDate = new Date(year, mIdx, 1);
+      if (!toDate) toDate = new Date(year, mIdx + 1, 0);
     }
   }
 
-  const d = new Date(s);
-  return !isNaN(d.getTime()) && d.getFullYear() > 1990 ? new Date(d.getFullYear(), d.getMonth(), d.getDate()) : null;
+  // Final fallback to current month
+  if (!fromDate || !toDate) {
+    const now = new Date();
+    fromDate = new Date(now.getFullYear(), now.getMonth(), 1);
+    toDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  }
+
+  fromDate.setHours(0, 0, 0, 0);
+  toDate.setHours(0, 0, 0, 0);
+
+  let totalDays = Math.floor((toDate.getTime() - fromDate.getTime()) / 86400000) + 1;
+
+  // HARD GUARDRAIL: A single-month attendance report is NEVER more than 31 days!
+  // If totalDays > 31 or < 1, Print Date was accidentally picked up.
+  // Force toDate to the true last day of fromDate's month:
+  if (totalDays > 31 || totalDays < 1) {
+    toDate = new Date(fromDate.getFullYear(), fromDate.getMonth() + 1, 0);
+    totalDays = Math.floor((toDate.getTime() - fromDate.getTime()) / 86400000) + 1;
+  }
+
+  const monthName = `${MONTH_NAMES[fromDate.getMonth()]} ${fromDate.getFullYear()}`;
+  return { fromDate, toDate, totalDays, monthName };
 }
 
 // =========================================================================
-// CORE EXTRACTION: FILTER MERGED CELLS LEFT-TO-RIGHT (PREVENT COLUMN SHIFTS)
+// CORE EXTRACTION: FILTER MERGED CELLS LEFT-TO-RIGHT (PREVENTS COLUMN SHIFT)
 // =========================================================================
 function extractDailyValues(row, totalDays) {
   if (!row || !Array.isArray(row)) {
@@ -184,7 +287,7 @@ function extractDailyValues(row, totalDays) {
       nonEmpties.push(val);
     }
   }
-  // nonEmpties[0] is the label (e.g. 'Status', 'First In', 'Last Out', 'Total Hrs')
+  // nonEmpties[0] is the label ('Status', 'First In', 'Last Out', 'Total Hrs')
   // The remaining values correspond to Day 1 through Day totalDays
   const daily = nonEmpties.slice(1, totalDays + 1);
   while (daily.length < totalDays) {
@@ -220,7 +323,7 @@ export default function App() {
     }
   }, [master]);
 
-  // Attendance & Payroll State (initialized dynamically)
+  // Attendance & Payroll State
   const [attendanceRecords, setAttendanceRecords] = useState([]);
   const [payrollBreakdown, setPayrollBreakdown] = useState([]);
   const [metaInfo, setMetaInfo] = useState(() => {
@@ -390,7 +493,7 @@ export default function App() {
           } else if (evaluatedStatus === "A") {
             absentDays += 1.0;
           } else if (evaluatedStatus === "W") {
-            // Scheduled weekly off
+            // Weekly off
           } else {
             absentDays += 1.0;
           }
@@ -522,7 +625,7 @@ export default function App() {
   }, [master]);
 
   // =========================================================================
-  // 3. CRITICAL BUG FIX: BIOMETRIC EXCEL PARSER (MERGED CELL FILTERING)
+  // 3. STRICT BIOMETRIC EXCEL PARSER (NO PRINT DATE, 1-31 DAY GUARDRAIL)
   // =========================================================================
   const parseBiometricWorkbook = async (file) => {
     setIsProcessing(true);
@@ -538,113 +641,13 @@ export default function App() {
         throw new Error("Uploaded workbook contains insufficient rows.");
       }
 
-      // STEP 1: DYNAMIC REPORT MONTH & DATE RANGE EXTRACTION
-      let fromDate = null;
-      let toDate = null;
-      let fromStr = "";
-      let toStr = "";
-
-      // Scan rows 1–15 for "From:" and "To:" cells or serial dates underneath
-      for (let r = 0; r < Math.min(15, rawMatrix.length); r++) {
-        const row = rawMatrix[r];
-        if (!row || !Array.isArray(row)) continue;
-
-        for (let c = 0; c < row.length; c++) {
-          const cellVal = String(row[c] == null ? "" : row[c]).trim();
-
-          if (/from\s*:/i.test(cellVal)) {
-            const mFrom = cellVal.match(/from\s*:\s*([^\s]+)/i);
-            if (mFrom) {
-              const cand = parseAnyDate(mFrom[1]);
-              if (cand) { fromDate = cand; fromStr = mFrom[1]; }
-            }
-            if (!fromDate) {
-              for (let step = 1; step <= 5 && c + step < row.length; step++) {
-                const candVal = row[c + step];
-                if (candVal !== "" && candVal != null) {
-                  const cand = parseAnyDate(candVal);
-                  if (cand) { fromDate = cand; fromStr = String(candVal); break; }
-                }
-              }
-            }
-            if (!fromDate && r + 1 < rawMatrix.length) {
-              for (let step = 0; step <= 3 && c + step < rawMatrix[r + 1].length; step++) {
-                const candVal = rawMatrix[r + 1][c + step];
-                if (candVal !== "" && candVal != null) {
-                  const cand = parseAnyDate(candVal);
-                  if (cand) { fromDate = cand; fromStr = String(candVal); break; }
-                }
-              }
-            }
-          }
-
-          if (/to\s*:/i.test(cellVal)) {
-            const mTo = cellVal.match(/to\s*:\s*([^\s]+)/i);
-            if (mTo) {
-              const cand = parseAnyDate(mTo[1]);
-              if (cand) { toDate = cand; toStr = mTo[1]; }
-            }
-            if (!toDate) {
-              for (let step = 1; step <= 5 && c + step < row.length; step++) {
-                const candVal = row[c + step];
-                if (candVal !== "" && candVal != null) {
-                  const cand = parseAnyDate(candVal);
-                  if (cand) { toDate = cand; toStr = String(candVal); break; }
-                }
-              }
-            }
-            if (!toDate && r + 1 < rawMatrix.length) {
-              for (let step = 0; step <= 3 && c + step < rawMatrix[r + 1].length; step++) {
-                const candVal = rawMatrix[r + 1][c + step];
-                if (candVal !== "" && candVal != null) {
-                  const cand = parseAnyDate(candVal);
-                  if (cand) { toDate = cand; toStr = String(candVal); break; }
-                }
-              }
-            }
-          }
-        }
-      }
-
-      // Fallback serial check if header labels were merged or absent
-      if (!fromDate || !toDate) {
-        const serialCandidates = [];
-        for (let r = 0; r < Math.min(15, rawMatrix.length); r++) {
-          const row = rawMatrix[r];
-          if (!row || !Array.isArray(row)) continue;
-          for (let c = 0; c < row.length; c++) {
-            const num = Number(row[c]);
-            if (!isNaN(num) && num >= 40000 && num <= 65000) {
-              const d = excelSerialToDate(num);
-              if (d) serialCandidates.push(d);
-            }
-          }
-        }
-        if (serialCandidates.length >= 2) {
-          serialCandidates.sort((a, b) => a.getTime() - b.getTime());
-          if (!fromDate) fromDate = serialCandidates[0];
-          if (!toDate) toDate = serialCandidates[serialCandidates.length - 1];
-        }
-      }
-
-      // Calculate total calendar days and active month dynamically
-      let detectedTotalDays = 30;
-      let calculatedMonthYear = "";
-
-      if (fromDate && toDate) {
-        detectedTotalDays = Math.floor((toDate.getTime() - fromDate.getTime()) / 86400000) + 1;
-        calculatedMonthYear = `${MONTH_NAMES[fromDate.getMonth()]} ${fromDate.getFullYear()}`;
-      } else if (fromDate) {
-        detectedTotalDays = new Date(fromDate.getFullYear(), fromDate.getMonth() + 1, 0).getDate();
-        toDate = new Date(fromDate.getFullYear(), fromDate.getMonth(), detectedTotalDays);
-        calculatedMonthYear = `${MONTH_NAMES[fromDate.getMonth()]} ${fromDate.getFullYear()}`;
-      } else {
-        const now = new Date();
-        fromDate = new Date(now.getFullYear(), now.getMonth(), 1);
-        detectedTotalDays = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-        toDate = new Date(now.getFullYear(), now.getMonth(), detectedTotalDays);
-        calculatedMonthYear = `${MONTH_NAMES[now.getMonth()]} ${now.getFullYear()}`;
-      }
+      // STEP 1: STRICT REPORT PERIOD PARSING WITH PRINT DATE IGNORING
+      const {
+        fromDate,
+        toDate,
+        totalDays: detectedTotalDays,
+        monthName: calculatedMonthYear
+      } = extractReportPeriod(rawMatrix, file.name);
 
       // Map Calendar Sundays
       const sundayIndices = [];
@@ -834,7 +837,7 @@ export default function App() {
       const payroll = calculatePayroll(parsedRecords, master, newMeta);
       setPayrollBreakdown(payroll);
 
-      logs.push(`Biometric sheet loaded. Month: ${calculatedMonthYear}. Extracted ${parsedRecords.length} staff records (${detectedTotalDays} days).`);
+      logs.push(`Biometric sheet loaded. Month: ${calculatedMonthYear}. Period: ${fromDateFormatted} to ${toDateFormatted} (${detectedTotalDays} days, ${sundayIndices.length} Sundays). Extracted ${parsedRecords.length} staff records.`);
       setParseLogs(logs);
 
       // Trigger Confirmation Modal with dynamically parsed details
@@ -857,15 +860,15 @@ export default function App() {
   };
 
   // =========================================================================
-  // 4. DYNAMIC SYNTHETIC DATA GENERATOR
+  // 4. DYNAMIC SYNTHETIC DATA GENERATOR (SEPTEMBER 2026 REFERENCE)
   // =========================================================================
   const loadInstantDemo = () => {
     setIsProcessing(true);
-    // Dynamically set up August 2026 reference dataset
-    const fromDate = new Date(2026, 7, 1); // 01-Aug-2026
-    const totalDays = 31; // August has 31 days
-    const toDate = new Date(2026, 7, 31);
-    const monthYear = "AUGUST 2026";
+    // Standard September 2026 reference (30 days, 4 Sundays)
+    const fromDate = new Date(2026, 8, 1); // 01-Sep-2026
+    const totalDays = 30; // September has 30 days
+    const toDate = new Date(2026, 8, 30);
+    const monthYear = "SEPTEMBER 2026";
 
     const sundays = [];
     for (let d = 0; d < totalDays; d++) {
@@ -900,7 +903,7 @@ export default function App() {
           }
         } else {
           if (isSunday) {
-            if (d === 16 && parseInt(emp.empId, 10) % 3 === 0) {
+            if (d === 13 && parseInt(emp.empId, 10) % 3 === 0) {
               status = "PW";
               hrs = 8.5;
               inTime = "09:00";
@@ -946,10 +949,10 @@ export default function App() {
     });
 
     const meta = {
-      fileName: `BIOMETRIC_REPORT_AUGUST_2026.xlsx`,
-      fromDate: `01/08/2026`,
-      toDate: `31/08/2026`,
-      totalDays: 31,
+      fileName: `BIOMETRIC_REPORT_SEPTEMBER_2026.xlsx`,
+      fromDate: `01/09/2026`,
+      toDate: `30/09/2026`,
+      totalDays: 30,
       sundaysCount: sundays.length,
       monthYear: monthYear,
       processedAt: new Date().toLocaleTimeString()
@@ -1602,7 +1605,7 @@ export default function App() {
                   <DollarSign className="w-5 h-5 text-emerald-400" /> Full Industrial Salary Calculation Sheet ({metaInfo.monthYear})
                 </h2>
                 <p className="text-xs text-slate-400">
-                  Daily punches extracted through merged-cell filter. Distinct columns for <span className="text-amber-300 font-semibold">Bonus Days</span> and <span className="text-amber-300 font-semibold">Bonus Pay</span>.
+                  Strict report period parser ignoring Print Date. Distinct columns for <span className="text-amber-300 font-semibold">Bonus Days</span> and <span className="text-amber-300 font-semibold">Bonus Pay</span>.
                 </p>
               </div>
 
@@ -2007,7 +2010,7 @@ export default function App() {
                 <Upload className="w-5 h-5 text-indigo-400" /> Biometric Attendance Excel Importer
               </h2>
               <p className="text-xs text-slate-400 mt-1">
-                Reads raw biometric `.xls` reports (such as `AUG.xls` spanning 65 merged columns). Automatically filters merged empty cells and extracts the exact month without date shifts.
+                Reads raw biometric `.xls` reports (such as `AUG.xls` spanning 65 merged columns). Automatically filters merged empty cells, ignores Row 6 Print Date, and strictly bounds months to 1–31 days.
               </p>
 
               <div
@@ -2022,7 +2025,7 @@ export default function App() {
                   <FileSpreadsheet className="w-7 h-7" />
                 </div>
                 <p className="text-sm font-semibold text-slate-200">Drag & drop biometric monthly report (.xlsx / .xls)</p>
-                <p className="text-xs text-slate-500 mt-1">65-column merged cell filter with dynamic month detection</p>
+                <p className="text-xs text-slate-500 mt-1">65-column merged cell filter with strict Row 7 From/To date detection</p>
 
                 <div className="mt-5">
                   <label className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-semibold text-xs cursor-pointer shadow-lg shadow-indigo-600/30 transition">
@@ -2058,8 +2061,8 @@ export default function App() {
                 <ShieldCheck className="w-4 h-4 text-emerald-400" /> Biometric Engine Specifications
               </h4>
               <ul className="list-disc list-inside space-y-1 text-slate-400">
-                <li><strong className="text-slate-300">Merged Cell Filter:</strong> Scans non-empty cells across all 65 columns, ensuring all 25–31 working days are extracted without 21-day blank dropouts.</li>
-                <li><strong className="text-slate-300">Dynamic Month:</strong> Reads Excel serial dates (e.g. `46235` for August) to configure the entire UI, days count, and Sundays dynamically.</li>
+                <li><strong className="text-slate-300">Strict Date Range:</strong> Skips Row 6 Print Date, reads Row 7 From/To, and enforces the 31-day month guardrail.</li>
+                <li><strong className="text-slate-300">Merged Cell Filter:</strong> Scans non-empty cells across all 65 columns, ensuring all 25–31 working days are extracted without blank dropouts.</li>
                 <li><strong className="text-slate-300">Bonus Days Logic:</strong> Calculated on non-Sunday present days (26+ &#8594; 3d, 24-25 &#8594; 2d, 23 &#8594; 1d).</li>
               </ul>
             </div>
