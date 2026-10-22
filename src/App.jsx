@@ -23,87 +23,113 @@ import {
   Sparkles,
   FileSpreadsheet,
   X,
-  Sliders,
   ShieldCheck,
   Building2,
   TrendingUp,
   Activity,
   Layers,
-  HelpCircle
+  FileUp,
+  RefreshCw
 } from "lucide-react";
 
 // =========================================================================
-// 1. HARD-CODED PRELOADED EMPLOYEE ROSTER (ZERO SETUP REQUIRED)
+// 1. HARD-FEEDED COMPLETE 75+ EMPLOYEE MASTER
 // =========================================================================
-const FACTORY_EMPLOYEE_MASTER = [
-  { empId: "1", name: "DALPAT SINGH", dutyHours: 9.5, salary: 18000, ownTiffin: "No", bonus: "Yes", active: "Yes" },
-  { empId: "10", name: "SATYA NARYAN", dutyHours: 0, salary: 16000, ownTiffin: "No", bonus: "Yes", active: "Yes" },
-  { empId: "11", name: "KANHAIYA LAL MAHAWAR", dutyHours: 11, salary: 13000, ownTiffin: "No", bonus: "Yes", active: "Yes" },
-  { empId: "12", name: "AKASH NIHAL", dutyHours: 0, salary: 14000, ownTiffin: "No", bonus: "Yes", active: "Yes" },
-  { empId: "13", name: "GAJENDRA GURJAR", dutyHours: 9.5, salary: 16500, ownTiffin: "No", bonus: "Yes", active: "Yes" },
-  { empId: "14", name: "SUNIL MAHAWAR", dutyHours: 10, salary: 18000, ownTiffin: "No", bonus: "Yes", active: "Yes" },
-  { empId: "15", name: "MUKESH SEN", dutyHours: 9.5, salary: 11500, ownTiffin: "No", bonus: "Yes", active: "Yes" },
-  { empId: "16", name: "MUKESH MAHAWAR", dutyHours: 9.5, salary: 20500, ownTiffin: "No", bonus: "Yes", active: "Yes" },
-  { empId: "17", name: "PRADEEP SAINI", dutyHours: 9.5, salary: 21000, ownTiffin: "No", bonus: "Yes", active: "Yes" },
-  { empId: "18", name: "GULSHAN VERMA", dutyHours: 9.5, salary: 13500, ownTiffin: "No", bonus: "Yes", active: "Yes" },
-  { empId: "19", name: "MAHAVEER SHAKYAWAL", dutyHours: 10, salary: 16500, ownTiffin: "No", bonus: "Yes", active: "Yes" },
-  { empId: "2", name: "LALIT MAHAWAR", dutyHours: 9.5, salary: 21000, ownTiffin: "No", bonus: "Yes", active: "Yes" },
-  { empId: "20", name: "CHANCHAL SEN", dutyHours: 8, salary: 16000, ownTiffin: "No", bonus: "Yes", active: "Yes" },
-  { empId: "21", name: "RAVINDRA MAHAWAR", dutyHours: 9.5, salary: 16500, ownTiffin: "No", bonus: "Yes", active: "Yes" },
-  { empId: "22", name: "DILKHUSH MEENA", dutyHours: 0, salary: 0, ownTiffin: "No", bonus: "Yes", active: "No" },
-  { empId: "23", name: "MAHAVEER GURJAR", dutyHours: 9.5, salary: 14500, ownTiffin: "No", bonus: "Yes", active: "Yes" },
-  { empId: "24", name: "DEEPAK SAINI", dutyHours: 9.5, salary: 18000, ownTiffin: "No", bonus: "Yes", active: "Yes" },
-  { empId: "25", name: "GAJENDRA SAINI", dutyHours: 9.5, salary: 15200, ownTiffin: "No", bonus: "Yes", active: "Yes" },
-  { empId: "26", name: "VINOD MEGHWAL", dutyHours: 9.5, salary: 18500, ownTiffin: "No", bonus: "Yes", active: "Yes" },
-  { empId: "27", name: "AJAY KUSHWAHA", dutyHours: 0, salary: 0, ownTiffin: "No", bonus: "Yes", active: "No" },
-  { empId: "28", name: "RAJESH REGAR", dutyHours: 9.5, salary: 15000, ownTiffin: "No", bonus: "Yes", active: "Yes" },
-  { empId: "29", name: "PRADEEP SINGH", dutyHours: 0, salary: 16000, ownTiffin: "No", bonus: "Yes", active: "No" },
-  { empId: "3", name: "SONU SUMAN", dutyHours: 9.5, salary: 22000, ownTiffin: "No", bonus: "Yes", active: "Yes" },
-  { empId: "30", name: "VINAYAK GAUTAM", dutyHours: 9.5, salary: 17000, ownTiffin: "No", bonus: "Yes", active: "Yes" },
-  { empId: "31", name: "SANTOSH", dutyHours: 9.5, salary: 22000, ownTiffin: "No", bonus: "Yes", active: "Yes" },
-  { empId: "32", name: "DAYARAM SUMAN", dutyHours: 0, salary: 0, ownTiffin: "No", bonus: "Yes", active: "No" },
-  { empId: "33", name: "AMIT MEHRA", dutyHours: 10, salary: 10000, ownTiffin: "No", bonus: "Yes", active: "Yes" },
-  { empId: "34", name: "MANISH VERMA", dutyHours: 0, salary: 0, ownTiffin: "No", bonus: "Yes", active: "No" },
-  { empId: "35", name: "ROHIT DHARWAL", dutyHours: 9.5, salary: 25000, ownTiffin: "No", bonus: "Yes", active: "Yes" },
-  { empId: "36", name: "VINOD GURJAR", dutyHours: 0, salary: 12000, ownTiffin: "No", bonus: "Yes", active: "Yes" },
-  { empId: "37", name: "LOVE KUSH", dutyHours: 0, salary: 17000, ownTiffin: "No", bonus: "Yes", active: "Yes" },
-  { empId: "38", name: "ANOOP SHARMA", dutyHours: 0, salary: 0, ownTiffin: "No", bonus: "Yes", active: "No" },
-  { empId: "39", name: "RAJESH GOCHER", dutyHours: 0, salary: 12500, ownTiffin: "No", bonus: "Yes", active: "Yes" },
-  { empId: "4", name: "DEVESH PRAJAPATI", dutyHours: 9.5, salary: 15000, ownTiffin: "No", bonus: "Yes", active: "Yes" },
-  { empId: "40", name: "RAMJEET NAGAR", dutyHours: 9.5, salary: 17000, ownTiffin: "No", bonus: "Yes", active: "Yes" },
-  { empId: "41", name: "VISHNU GOCHER", dutyHours: 9.5, salary: 11500, ownTiffin: "No", bonus: "Yes", active: "Yes" },
-  { empId: "42", name: "BRIJ MOHAN", dutyHours: 9.5, salary: 18000, ownTiffin: "No", bonus: "Yes", active: "Yes" },
-  { empId: "43", name: "SUNIL GOYAL", dutyHours: 9.5, salary: 17000, ownTiffin: "No", bonus: "Yes", active: "Yes" },
-  { empId: "44", name: "BALRAM MEGHWAL", dutyHours: 9.5, salary: 17000, ownTiffin: "No", bonus: "Yes", active: "Yes" },
-  { empId: "46", name: "VISHNU SHAKYAWAL", dutyHours: 0, salary: 17000, ownTiffin: "No", bonus: "Yes", active: "Yes" },
-  { empId: "47", name: "ANIL MAHAWAR", dutyHours: 0, salary: 21000, ownTiffin: "No", bonus: "Yes", active: "Yes" },
-  { empId: "48", name: "MUKESH REGAR", dutyHours: 10, salary: 24000, ownTiffin: "No", bonus: "Yes", active: "Yes" },
-  { empId: "49", name: "VISHAL SINGH", dutyHours: 9.5, salary: 16000, ownTiffin: "No", bonus: "Yes", active: "Yes" },
-  { empId: "5", name: "ROHIT MEGHWAL", dutyHours: 10, salary: 13000, ownTiffin: "No", bonus: "Yes", active: "Yes" }
+const INITIAL_MASTER = [
+  { empId: "1", name: "DALPAT SINGH", dutyHours: 9.5, salary: 18000, ownTiffin: "No", bonusDays: "Yes", active: "Yes", notes: "" },
+  { empId: "10", name: "SATYA NARYAN", dutyHours: 0, salary: 16000, ownTiffin: "No", bonusDays: "Yes", active: "Yes", notes: "" },
+  { empId: "11", name: "KANHAIYA LAL MAHAWAR", dutyHours: 11, salary: 13000, ownTiffin: "No", bonusDays: "Yes", active: "Yes", notes: "" },
+  { empId: "12", name: "AKASH NIHAL", dutyHours: 0, salary: 14000, ownTiffin: "No", bonusDays: "Yes", active: "Yes", notes: "" },
+  { empId: "13", name: "GAJENDRA GURJAR", dutyHours: 9.5, salary: 16500, ownTiffin: "No", bonusDays: "Yes", active: "Yes", notes: "" },
+  { empId: "14", name: "SUNIL MAHAWAR", dutyHours: 10, salary: 18000, ownTiffin: "No", bonusDays: "Yes", active: "Yes", notes: "" },
+  { empId: "15", name: "MUKESH SEN", dutyHours: 9.5, salary: 11500, ownTiffin: "No", bonusDays: "Yes", active: "Yes", notes: "" },
+  { empId: "16", name: "MUKESH MAHAWAR", dutyHours: 9.5, salary: 20500, ownTiffin: "No", bonusDays: "Yes", active: "Yes", notes: "" },
+  { empId: "17", name: "PRADEEP SAINI", dutyHours: 9.5, salary: 21000, ownTiffin: "No", bonusDays: "Yes", active: "Yes", notes: "" },
+  { empId: "18", name: "GULSHAN VERMA", dutyHours: 9.5, salary: 13500, ownTiffin: "No", bonusDays: "Yes", active: "Yes", notes: "" },
+  { empId: "19", name: "MAHAVEER SHAKYAWAL", dutyHours: 10, salary: 16500, ownTiffin: "No", bonusDays: "Yes", active: "Yes", notes: "" },
+  { empId: "2", name: "LALIT MAHAWAR", dutyHours: 9.5, salary: 21000, ownTiffin: "No", bonusDays: "Yes", active: "Yes", notes: "" },
+  { empId: "20", name: "CHANCHAL SEN", dutyHours: 8, salary: 16000, ownTiffin: "No", bonusDays: "Yes", active: "Yes", notes: "" },
+  { empId: "21", name: "RAVINDRA MAHAWAR", dutyHours: 9.5, salary: 16500, ownTiffin: "No", bonusDays: "Yes", active: "Yes", notes: "" },
+  { empId: "22", name: "DILKHUSH MEENA", dutyHours: 0, salary: 0, ownTiffin: "No", bonusDays: "Yes", active: "No", notes: "" },
+  { empId: "23", name: "MAHAVEER GURJAR", dutyHours: 9.5, salary: 14500, ownTiffin: "No", bonusDays: "Yes", active: "Yes", notes: "" },
+  { empId: "24", name: "DEEPAK SAINI", dutyHours: 9.5, salary: 18000, ownTiffin: "No", bonusDays: "Yes", active: "Yes", notes: "" },
+  { empId: "25", name: "GAJENDRA SAINI", dutyHours: 9.5, salary: 15200, ownTiffin: "No", bonusDays: "Yes", active: "Yes", notes: "" },
+  { empId: "26", name: "VINOD MEGHWAL", dutyHours: 9.5, salary: 18500, ownTiffin: "No", bonusDays: "Yes", active: "Yes", notes: "" },
+  { empId: "27", name: "AJAY KUSHWAHA", dutyHours: 0, salary: 0, ownTiffin: "No", bonusDays: "Yes", active: "No", notes: "" },
+  { empId: "28", name: "RAJESH REGAR", dutyHours: 9.5, salary: 15000, ownTiffin: "No", bonusDays: "Yes", active: "Yes", notes: "" },
+  { empId: "29", name: "PRADEEP SINGH", dutyHours: 0, salary: 16000, ownTiffin: "No", bonusDays: "Yes", active: "No", notes: "" },
+  { empId: "3", name: "SONU SUMAN", dutyHours: 9.5, salary: 22000, ownTiffin: "No", bonusDays: "Yes", active: "Yes", notes: "" },
+  { empId: "30", name: "VINAYAK GAUTAM", dutyHours: 9.5, salary: 17000, ownTiffin: "No", bonusDays: "Yes", active: "Yes", notes: "" },
+  { empId: "31", name: "SANTOSH", dutyHours: 9.5, salary: 22000, ownTiffin: "No", bonusDays: "Yes", active: "Yes", notes: "" },
+  { empId: "32", name: "DAYARAM SUMAN", dutyHours: 0, salary: 0, ownTiffin: "No", bonusDays: "Yes", active: "No", notes: "" },
+  { empId: "33", name: "AMIT MEHRA", dutyHours: 10, salary: 10000, ownTiffin: "No", bonusDays: "Yes", active: "Yes", notes: "" },
+  { empId: "34", name: "MANISH VERMA", dutyHours: 0, salary: 0, ownTiffin: "No", bonusDays: "Yes", active: "No", notes: "" },
+  { empId: "35", name: "ROHIT DHARWAL", dutyHours: 9.5, salary: 25000, ownTiffin: "No", bonusDays: "Yes", active: "Yes", notes: "" },
+  { empId: "36", name: "VINOD GURJAR", dutyHours: 0, salary: 12000, ownTiffin: "No", bonusDays: "Yes", active: "Yes", notes: "" },
+  { empId: "37", name: "LOVE KUSH", dutyHours: 0, salary: 17000, ownTiffin: "No", bonusDays: "Yes", active: "Yes", notes: "" },
+  { empId: "38", name: "ANOOP SHARMA", dutyHours: 0, salary: 0, ownTiffin: "No", bonusDays: "Yes", active: "No", notes: "" },
+  { empId: "39", name: "RAJESH GOCHER", dutyHours: 0, salary: 12500, ownTiffin: "No", bonusDays: "Yes", active: "Yes", notes: "" },
+  { empId: "4", name: "DEVESH PRAJAPATI", dutyHours: 9.5, salary: 15000, ownTiffin: "No", bonusDays: "Yes", active: "Yes", notes: "" },
+  { empId: "40", name: "RAMJEET NAGAR", dutyHours: 9.5, salary: 17000, ownTiffin: "No", bonusDays: "Yes", active: "Yes", notes: "" },
+  { empId: "41", name: "VISHNU GOCHER", dutyHours: 9.5, salary: 11500, ownTiffin: "No", bonusDays: "Yes", active: "Yes", notes: "" },
+  { empId: "42", name: "BRIJ MOHAN", dutyHours: 9.5, salary: 18000, ownTiffin: "No", bonusDays: "Yes", active: "Yes", notes: "" },
+  { empId: "43", name: "SUNIL GOYAL", dutyHours: 9.5, salary: 17000, ownTiffin: "No", bonusDays: "Yes", active: "Yes", notes: "" },
+  { empId: "44", name: "BALRAM MEGHWAL", dutyHours: 9.5, salary: 17000, ownTiffin: "No", bonusDays: "Yes", active: "Yes", notes: "" },
+  { empId: "46", name: "VISHNU SHAKYAWAL", dutyHours: 0, salary: 17000, ownTiffin: "No", bonusDays: "Yes", active: "Yes", notes: "" },
+  { empId: "47", name: "ANIL MAHAWAR", dutyHours: 0, salary: 21000, ownTiffin: "No", bonusDays: "Yes", active: "Yes", notes: "" },
+  { empId: "48", name: "MUKESH REGAR", dutyHours: 10, salary: 24000, ownTiffin: "No", bonusDays: "Yes", active: "Yes", notes: "" },
+  { empId: "49", name: "VISHAL SINGH", dutyHours: 9.5, salary: 16000, ownTiffin: "No", bonusDays: "Yes", active: "Yes", notes: "" },
+  { empId: "5", name: "ROHIT MEGHWAL", dutyHours: 10, salary: 13000, ownTiffin: "No", bonusDays: "Yes", active: "Yes", notes: "" },
+  { empId: "50", name: "LALIT SHRINGI", dutyHours: 0, salary: 14500, ownTiffin: "No", bonusDays: "Yes", active: "No", notes: "" },
+  { empId: "51", name: "SURENDRA SUMAN", dutyHours: 9.5, salary: 17000, ownTiffin: "No", bonusDays: "Yes", active: "Yes", notes: "" },
+  { empId: "52", name: "KHUSH", dutyHours: 10, salary: 15500, ownTiffin: "No", bonusDays: "Yes", active: "Yes", notes: "" },
+  { empId: "53", name: "RAHUL", dutyHours: 0, salary: 0, ownTiffin: "No", bonusDays: "Yes", active: "No", notes: "" },
+  { empId: "54", name: "RAJENDRA RINKU", dutyHours: 0, salary: 16000, ownTiffin: "No", bonusDays: "Yes", active: "Yes", notes: "" },
+  { empId: "56", name: "RAKESH VERMA", dutyHours: 0, salary: 15000, ownTiffin: "No", bonusDays: "Yes", active: "Yes", notes: "" },
+  { empId: "57", name: "SURAJ SUMAN", dutyHours: 9.5, salary: 12000, ownTiffin: "No", bonusDays: "Yes", active: "Yes", notes: "" },
+  { empId: "58", name: "PREMCHAND MEGHWAL", dutyHours: 0, salary: 17500, ownTiffin: "No", bonusDays: "Yes", active: "Yes", notes: "" },
+  { empId: "59", name: "DWARKA LAL", dutyHours: 0, salary: 21000, ownTiffin: "No", bonusDays: "Yes", active: "Yes", notes: "" },
+  { empId: "60", name: "PREM SHANKAR MEENA", dutyHours: 10, salary: 17000, ownTiffin: "No", bonusDays: "Yes", active: "Yes", notes: "" },
+  { empId: "61", name: "RAJARAM MEENA", dutyHours: 10, salary: 13000, ownTiffin: "No", bonusDays: "Yes", active: "Yes", notes: "" },
+  { empId: "62", name: "PURSHOTTAM", dutyHours: 9.5, salary: 18000, ownTiffin: "No", bonusDays: "Yes", active: "Yes", notes: "" },
+  { empId: "66", name: "MANISH VERMA", dutyHours: 0, salary: 0, ownTiffin: "No", bonusDays: "Yes", active: "No", notes: "" },
+  { empId: "67", name: "VIPIN VERMA", dutyHours: 9.5, salary: 5000, ownTiffin: "No", bonusDays: "Yes", active: "Yes", notes: "" },
+  { empId: "68", name: "BABLU MEWARA", dutyHours: 9.5, salary: 10500, ownTiffin: "No", bonusDays: "Yes", active: "Yes", notes: "" },
+  { empId: "69", name: "BABLESH MEGAWAL", dutyHours: 10, salary: 10500, ownTiffin: "No", bonusDays: "Yes", active: "Yes", notes: "" },
+  { empId: "7", name: "KUNJ BIHARI", dutyHours: 10, salary: 18400, ownTiffin: "No", bonusDays: "Yes", active: "Yes", notes: "" },
+  { empId: "72", name: "GHANSHYAM BHATT", dutyHours: 0, salary: 15500, ownTiffin: "No", bonusDays: "Yes", active: "Yes", notes: "" },
+  { empId: "73", name: "ARUN PRAJAPATI", dutyHours: 0, salary: 0, ownTiffin: "No", bonusDays: "Yes", active: "No", notes: "" },
+  { empId: "74", name: "UMASHANKAR GWALA", dutyHours: 0, salary: 0, ownTiffin: "No", bonusDays: "Yes", active: "No", notes: "" },
+  { empId: "77", name: "RAGHUVEER GOCHER", dutyHours: 0, salary: 21000, ownTiffin: "No", bonusDays: "Yes", active: "Yes", notes: "" },
+  { empId: "78", name: "BALRAM GOCHER", dutyHours: 9.5, salary: 11000, ownTiffin: "No", bonusDays: "Yes", active: "Yes", notes: "" },
+  { empId: "79", name: "RAVI SUMAN", dutyHours: 0, salary: 0, ownTiffin: "No", bonusDays: "Yes", active: "Yes", notes: "" },
+  { empId: "8", name: "CHANDRA PRAKEASH CM", dutyHours: 10, salary: 16000, ownTiffin: "No", bonusDays: "Yes", active: "Yes", notes: "" },
+  { empId: "80", name: "VINOD MALAV", dutyHours: 10, salary: 14000, ownTiffin: "No", bonusDays: "Yes", active: "Yes", notes: "" },
+  { empId: "81", name: "GOLU GOCHER", dutyHours: 9.5, salary: 11000, ownTiffin: "No", bonusDays: "Yes", active: "Yes", notes: "" },
+  { empId: "84", name: "SURAJ KUSHWAH", dutyHours: 0, salary: 0, ownTiffin: "No", bonusDays: "Yes", active: "Yes", notes: "" },
+  { empId: "85", name: "RAVI CHOHAN", dutyHours: 10, salary: 11000, ownTiffin: "No", bonusDays: "Yes", active: "Yes", notes: "" },
+  { empId: "86", name: "DEVRAJ GUJJAR", dutyHours: 10, salary: 11000, ownTiffin: "No", bonusDays: "Yes", active: "Yes", notes: "" },
+  { empId: "88", name: "PRAKASH", dutyHours: 0, salary: 13500, ownTiffin: "No", bonusDays: "Yes", active: "Yes", notes: "" },
+  { empId: "89", name: "KANHAIYA LAL SAINI", dutyHours: 0, salary: 8500, ownTiffin: "No", bonusDays: "Yes", active: "Yes", notes: "" },
+  { empId: "9", name: "JAMNA SHANKAR", dutyHours: 9.5, salary: 17000, ownTiffin: "No", bonusDays: "Yes", active: "Yes", notes: "" },
+  { empId: "90", name: "VIKAS GAUTAM", dutyHours: 0, salary: 0, ownTiffin: "No", bonusDays: "Yes", active: "No", notes: "" },
+  { empId: "91", name: "PIYUSH LALWANI", dutyHours: 10, salary: 12000, ownTiffin: "No", bonusDays: "Yes", active: "Yes", notes: "" },
+  { empId: "92", name: "HARPAL BISHNOI", dutyHours: 0, salary: 0, ownTiffin: "No", bonusDays: "Yes", active: "No", notes: "" },
+  { empId: "93", name: "GAURAV SINGH RATHORE", dutyHours: 0, salary: 0, ownTiffin: "No", bonusDays: "Yes", active: "No", notes: "" }
 ];
 
 const LOCAL_STORAGE_KEY = "PAYROLL_MASTER";
 
-// Currency Formatter
-const formatINR = (val) => {
-  const num = Math.round(Number(val) || 0);
-  return "₹" + num.toLocaleString("en-IN");
-};
-
-// Decimal Formatter
-const formatDec = (val, dec = 2) => {
-  const num = Number(val) || 0;
-  return num.toFixed(dec);
-};
-
-// Normalize ID strictly (strips accidental Excel trailing .0 and trims)
-const cleanId = (val) => String(val || "").trim().replace(/\.0$/, "");
+// Helpers
+const cleanId = (val) => String(val ?? "").trim().replace(/\.0$/, "");
+const formatINR = (val) => "₹" + Math.round(Number(val) || 0).toLocaleString("en-IN");
+const formatDec = (val, dec = 2) => (Number(val) || 0).toFixed(dec);
 
 export default function App() {
   const [activeTab, setActiveTab] = useState("dashboard");
-  const [hideInactive, setHideInactive] = useState(true);
+  const [showInactive, setShowInactive] = useState(false);
 
-  // Employee Master State initialized from localStorage or Factory Defaults
+  // Load Employee Master with LocalStorage fallback
   const [master, setMaster] = useState(() => {
     try {
       const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
@@ -111,18 +137,18 @@ export default function App() {
         const parsed = JSON.parse(stored);
         if (Array.isArray(parsed) && parsed.length > 0) return parsed;
       }
-    } catch {
-      // fallback
+    } catch (e) {
+      console.error("Master load error:", e);
     }
-    return FACTORY_EMPLOYEE_MASTER;
+    return INITIAL_MASTER;
   });
 
   // Sync Master to localStorage
   useEffect(() => {
     try {
       localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(master));
-    } catch (err) {
-      console.error("Failed to persist master to localStorage:", err);
+    } catch (e) {
+      console.error("Master save error:", e);
     }
   }, [master]);
 
@@ -130,9 +156,9 @@ export default function App() {
   const [attendanceRecords, setAttendanceRecords] = useState([]);
   const [payrollBreakdown, setPayrollBreakdown] = useState([]);
   const [metaInfo, setMetaInfo] = useState({
-    fileName: "DEMO_BIO_APRIL_2026.xlsx",
-    fromDate: "01/04/2026",
-    toDate: "30/04/2026",
+    fileName: "SYNTHETIC_INDUSTRIAL_SAMPLE.xlsx",
+    fromDate: "01/09/2026",
+    toDate: "30/09/2026",
     totalDays: 30,
     sundaysCount: 4,
     processedAt: new Date().toLocaleTimeString()
@@ -143,21 +169,17 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState("");
   const [attendanceFilter, setAttendanceFilter] = useState("ALL");
 
-  // Modal State for Add / Edit Employee
+  // Modals
+  const [isEmpModalOpen, setIsEmpModalOpen] = useState(false);
   const [editingEmp, setEditingEmp] = useState(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const fileMasterInputRef = useRef(null);
 
-  // =========================================================================
-  // 2. PARSING HELPERS (TIME & DURATIONS)
-  // =========================================================================
+  // Time parsing helpers
   const parseTimeToHours = (timeVal) => {
     if (timeVal === undefined || timeVal === null || timeVal === "") return null;
-    if (typeof timeVal === "number") {
-      // Excel fractional day (0.5 = 12:00)
-      return Number((timeVal * 24).toFixed(2));
-    }
+    if (typeof timeVal === "number") return Number((timeVal * 24).toFixed(2));
     const str = String(timeVal).trim();
-    if (str === "00:00" || str === "0:00" || str === "--" || str === "-") return null;
+    if (["00:00", "0:00", "--", "-", ""].includes(str)) return null;
     const parts = str.split(":");
     if (parts.length >= 2) {
       const hh = parseInt(parts[0], 10) || 0;
@@ -171,9 +193,7 @@ export default function App() {
 
   const parseDurationHours = (durVal) => {
     if (!durVal || durVal === "00:00" || durVal === "--") return 0;
-    if (typeof durVal === "number") {
-      return Number((durVal * 24).toFixed(2));
-    }
+    if (typeof durVal === "number") return Number((durVal * 24).toFixed(2));
     const str = String(durVal).trim();
     const parts = str.split(":");
     if (parts.length >= 2) {
@@ -185,7 +205,6 @@ export default function App() {
     return isNaN(num) ? 0 : num;
   };
 
-  // Convert Excel Serial Date or String to valid date object
   const parseReportDate = (raw) => {
     if (!raw) return null;
     if (typeof raw === "number" && raw > 40000) {
@@ -194,9 +213,7 @@ export default function App() {
     const s = String(raw).trim();
     const parts = s.split(/[\/\-\.]/);
     if (parts.length === 3) {
-      if (parts[0].length === 4) {
-        return new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
-      }
+      if (parts[0].length === 4) return new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
       return new Date(Number(parts[2]), Number(parts[1]) - 1, Number(parts[0]));
     }
     const d = new Date(s);
@@ -204,13 +221,13 @@ export default function App() {
   };
 
   // =========================================================================
-  // 3. INDUSTRIAL PAYROLL COMPUTATION ENGINE
+  // 2. INDUSTRIAL PAYROLL CALCULATION ENGINE
   // =========================================================================
-  const runPayrollEngine = (attendanceList, currentMaster, meta) => {
+  const calculatePayroll = (records, currentMaster, meta) => {
     const masterMap = new Map();
     currentMaster.forEach((m) => masterMap.set(cleanId(m.empId), m));
 
-    const results = attendanceList.map((rec) => {
+    const results = records.map((rec) => {
       const empId = cleanId(rec.empId);
       const profile = masterMap.get(empId) || {
         empId,
@@ -218,18 +235,19 @@ export default function App() {
         dutyHours: 9.5,
         salary: 15000,
         ownTiffin: "No",
-        bonus: "Yes",
-        active: "Yes"
+        bonusDays: "Yes",
+        active: "Yes",
+        notes: ""
       };
 
-      const isActive = profile.active === "Yes";
+      const isActive = String(profile.active || "").trim().toLowerCase() === "yes";
       const isDayWorker = Number(profile.dutyHours) <= 0;
       const dutyHours = Number(profile.dutyHours) || 0;
       const monthlySalary = Number(profile.salary) || 0;
-      const ownTiffin = profile.ownTiffin === "Yes";
-      const bonusEligible = profile.bonus === "Yes";
+      const ownTiffin = String(profile.ownTiffin || "").trim().toLowerCase() === "yes";
+      const isBonusEligible = String(profile.bonusDays || "").trim().toLowerCase() === "yes";
 
-      // If inactive, completely zero out metrics
+      // If INACTIVE: Strict Rule -> Completely zero out financials & exclude from calculations
       if (!isActive) {
         return {
           empId,
@@ -241,7 +259,7 @@ export default function App() {
           monthlySalary,
           dailySalary: 0,
           hourlyRate: 0,
-          normalPresent: 0,
+          normalPresentDays: 0,
           absentDays: 0,
           actualTotalHours: 0,
           sundayWorkedDays: 0,
@@ -257,7 +275,7 @@ export default function App() {
           extraHourSalary: 0,
           sundayExtraSalary: 0,
           sundayDeductionSalary: 0,
-          bonusDaysCount: 0,
+          bonusDays: 0,
           bonusDaySalary: 0,
           totalAdjustment: 0,
           netSalary: 0,
@@ -265,12 +283,12 @@ export default function App() {
         };
       }
 
-      // Rates (Rule: Always divide monthly salary by 30)
+      // Rates (30-day divisor standard)
       const dailySalary = monthlySalary / 30;
       const hourlyRate = isDayWorker ? 0 : dailySalary / (dutyHours || 1);
       const effectiveDuty = isDayWorker ? 0 : ownTiffin ? Math.max(0, dutyHours - 0.5) : dutyHours;
 
-      let normalPresent = 0;
+      let normalPresentDays = 0;
       let absentDays = 0;
       let actualTotalHours = 0;
       let sundayWorkedDays = 0;
@@ -278,7 +296,7 @@ export default function App() {
       let sundayDeductionHours = 0;
       let hasSunday14HoursFlag = false;
 
-      // Evaluate days
+      // Evaluate punches day by day
       rec.days.forEach((d) => {
         const { isSunday, evaluatedStatus, actualHours } = d;
         actualTotalHours += actualHours || 0;
@@ -297,16 +315,15 @@ export default function App() {
               if (!isDayWorker) sundayDeductionHours += 12.0;
               hasSunday14HoursFlag = true;
             } else {
-              // Status was PW without duration
               sundayExtraDays += 1;
             }
           }
         } else {
-          // Normal Working Day
+          // Calendar Non-Sunday
           if (evaluatedStatus === "P") {
-            normalPresent += 1.0;
+            normalPresentDays += 1.0;
           } else if (evaluatedStatus === "HD") {
-            normalPresent += 0.5;
+            normalPresentDays += 0.5;
             absentDays += 0.5;
           } else if (evaluatedStatus === "A") {
             absentDays += 1.0;
@@ -318,11 +335,11 @@ export default function App() {
         }
       });
 
-      // Working Days & Hours requirements
+      // Normal Working Days requirement
       const normalWorkingDays = Math.max(0, meta.totalDays - meta.sundaysCount - absentDays);
       const requiredHours = isDayWorker ? 0 : normalWorkingDays * effectiveDuty;
 
-      // Adjusted actual punch hours
+      // Adjusted Punch Hours
       const adjustedActualHours = isDayWorker
         ? actualTotalHours
         : Math.max(0, actualTotalHours - sundayDeductionHours);
@@ -350,25 +367,25 @@ export default function App() {
 
       const sundayDeductionSalary = sundayDeductionHours * hourlyRate;
 
-      // Attendance Bonus Calculation
-      let bonusDaysCount = 0;
-      if (bonusEligible) {
-        if (normalPresent >= 26) {
-          bonusDaysCount = 3;
-        } else if (normalPresent >= 24) {
-          bonusDaysCount = 2;
-        } else if (normalPresent >= 23) {
-          bonusDaysCount = 1;
+      // CRITICAL BONUS DAYS EVALUATION
+      let bonusDays = 0;
+      if (isBonusEligible) {
+        if (normalPresentDays >= 26) {
+          bonusDays = 3;
+        } else if (normalPresentDays === 25 || normalPresentDays === 24) {
+          bonusDays = 2;
+        } else if (normalPresentDays === 23) {
+          bonusDays = 1;
         } else {
-          bonusDaysCount = 0;
+          bonusDays = 0;
         }
       }
-      const bonusDaySalary = bonusDaysCount * dailySalary;
+      const bonusDaySalary = bonusDays * dailySalary;
 
-      // Final Net Salary
+      // Net Salary
       let netSalary = 0;
       if (isDayWorker) {
-        netSalary = normalPresent * dailySalary + sundayExtraSalary + bonusDaySalary;
+        netSalary = normalPresentDays * dailySalary + sundayExtraSalary + bonusDaySalary;
       } else {
         netSalary =
           monthlySalary -
@@ -380,7 +397,7 @@ export default function App() {
           bonusDaySalary;
       }
 
-      // Adjustment = bonusDaySalary + sundayExtraSalary + extraHourSalary - shortHourDeduction
+      // Adjustment
       const totalAdjustment =
         bonusDaySalary + sundayExtraSalary + extraHourSalary - shortHourDeduction;
 
@@ -388,7 +405,7 @@ export default function App() {
       if (hasSunday14HoursFlag) remarksArr.push("CHECK 14+ HRS SUNDAY");
       if (isDayWorker) remarksArr.push("Day Worker");
       if (shortHours > 12) remarksArr.push("Excess Short Hours");
-      if (remarksArr.length === 0) remarksArr.push("Verified OK");
+      if (remarksArr.length === 0) remarksArr.push("Verified");
 
       return {
         empId,
@@ -400,7 +417,7 @@ export default function App() {
         monthlySalary,
         dailySalary,
         hourlyRate,
-        normalPresent,
+        normalPresentDays,
         absentDays,
         actualTotalHours,
         sundayWorkedDays,
@@ -416,7 +433,7 @@ export default function App() {
         extraHourSalary,
         sundayExtraSalary,
         sundayDeductionSalary,
-        bonusDaysCount,
+        bonusDays,
         bonusDaySalary,
         totalAdjustment,
         netSalary: Math.max(0, Math.round(netSalary)),
@@ -424,21 +441,20 @@ export default function App() {
       };
     });
 
-    // Natural integer order
-    results.sort((a, b) => parseInt(a.empId, 10) - parseInt(b.empId, 10));
+    results.sort((a, b) => parseInt(a.empId, 10) - parseInt(b.empId, 10) || a.empId.localeCompare(b.empId));
     return results;
   };
 
-  // Re-run payroll if master changes
+  // Recalculate whenever master changes
   useEffect(() => {
     if (attendanceRecords.length > 0) {
-      const recalculated = runPayrollEngine(attendanceRecords, master, metaInfo);
+      const recalculated = calculatePayroll(attendanceRecords, master, metaInfo);
       setPayrollBreakdown(recalculated);
     }
   }, [master]);
 
   // =========================================================================
-  // 4. BIOMETRIC EXCEL PARSER (LEGACY MERGED FORMAT COMPATIBILITY)
+  // 3. EXACT RAW BIOMETRIC EXCEL PARSER (PREVENTS COLUMN SHIFTS)
   // =========================================================================
   const parseBiometricWorkbook = async (file) => {
     setIsProcessing(true);
@@ -451,10 +467,10 @@ export default function App() {
       const rawMatrix = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" });
 
       if (!rawMatrix || rawMatrix.length < 5) {
-        throw new Error("Uploaded Excel sheet does not contain enough rows to be a biometric report.");
+        throw new Error("Uploaded file contains insufficient rows for biometric analysis.");
       }
 
-      // Step 1: Detect From & To date in rows 1 to 15
+      // Step 1: Detect Start and End Dates in rows 1 to 15
       let fromDateStr = "";
       let toDateStr = "";
       let detectedTotalDays = 30;
@@ -470,7 +486,6 @@ export default function App() {
             if (mFrom) fromDateStr = mFrom[1];
             if (mTo) toDateStr = mTo[1];
 
-            // If "To:" is in subsequent cells
             if (!toDateStr) {
               for (let c2 = c + 1; c2 < Math.min(c + 6, row.length); c2++) {
                 const val2 = String(row[c2] || "").trim();
@@ -485,16 +500,15 @@ export default function App() {
         }
       }
 
-      if (fromDateStr) {
-        fromDateObj = parseReportDate(fromDateStr);
-      }
+      if (fromDateStr) fromDateObj = parseReportDate(fromDateStr);
       if (!fromDateObj) {
-        fromDateObj = new Date(2026, 3, 1); // default April 2026
-        fromDateStr = "01/04/2026";
-        toDateStr = "30/04/2026";
+        fromDateObj = new Date(2026, 8, 1); // Sept 2026
+        fromDateStr = "01/09/2026";
+        toDateStr = "30/09/2026";
       }
 
-      // Step 2: Detect Sequence 1, 2, 3...N
+      // Step 2: Dynamic Detection of Day 1 Column
+      // Scan top 30 rows for sequence 1, 2, 3..N
       let dayHeaderRowIdx = -1;
       let dayDataStartColIdx = -1;
 
@@ -507,11 +521,11 @@ export default function App() {
 
           if (n1 === 1 && n2 === 2 && n3 === 3) {
             dayHeaderRowIdx = r;
-            dayDataStartColIdx = c;
+            // Strict legacy rule: In data rows (Status, First In, etc.), column 0 is label,
+            // column 1 is empty due to merged headers, and Day 1 punch is at physical index 2.
+            dayDataStartColIdx = c === 1 ? 2 : c;
             let count = 0;
-            while (parseInt(row[c + count], 10) === count + 1) {
-              count++;
-            }
+            while (parseInt(row[c + count], 10) === count + 1) count++;
             detectedTotalDays = count;
             break;
           }
@@ -520,22 +534,20 @@ export default function App() {
       }
 
       if (dayHeaderRowIdx === -1) {
-        logs.push("Could not strictly locate sequence 1,2,3. Used default column index 3 with 30 days.");
-        dayDataStartColIdx = 3;
+        logs.push("Could not strictly isolate sequence header 1..N. Assigned Day 1 data to Column Index 2 (30 days).");
+        dayDataStartColIdx = 2;
         detectedTotalDays = 30;
       }
 
-      // Identify Calendar Sundays
-      const sundayColIndices = [];
+      // Calendar Sunday Mapping
+      const sundayIndices = [];
       for (let d = 0; d < detectedTotalDays; d++) {
         const dObj = new Date(fromDateObj);
         dObj.setDate(fromDateObj.getDate() + d);
-        if (dObj.getDay() === 0) {
-          sundayColIndices.push(d);
-        }
+        if (dObj.getDay() === 0) sundayIndices.push(d);
       }
 
-      // Step 3: Scan Employees & Punch Rows
+      // Step 3: Scan Employee Blocks with ID & Name preservation
       const parsedRecords = [];
       const masterById = new Map();
       master.forEach((m) => masterById.set(cleanId(m.empId), m));
@@ -548,7 +560,6 @@ export default function App() {
           let rawEmpId = "";
           let rawEmpName = "";
 
-          // Extract ID and Name
           for (let c = 0; c < row.length; c++) {
             const cell = String(row[c] || "").trim();
             if (/emp\s*id\s*:/i.test(cell)) {
@@ -556,7 +567,6 @@ export default function App() {
               if (match && match[1]) {
                 rawEmpId = match[1];
               } else {
-                // Find next non-empty cell
                 for (let nextC = c + 1; nextC < Math.min(c + 5, row.length); nextC++) {
                   const nxt = String(row[nextC] || "").trim();
                   if (nxt) {
@@ -572,6 +582,7 @@ export default function App() {
               if (nameMatch && nameMatch[1].trim()) {
                 rawEmpName = nameMatch[1].trim();
               } else {
+                // Skip merged empty cells to extract exact name
                 for (let nextC = c + 1; nextC < Math.min(c + 8, row.length); nextC++) {
                   const nxt = String(row[nextC] || "").trim();
                   if (nxt && !/type|dept/i.test(nxt)) {
@@ -586,11 +597,10 @@ export default function App() {
           const empId = cleanId(rawEmpId);
           if (!empId) continue;
 
-          // Lookup in master to ensure strict naming integrity
           const profile = masterById.get(empId);
           const finalName = profile ? profile.name : rawEmpName || `EMPLOYEE #${empId}`;
 
-          // Find Punch Rows in this employee block
+          // Scan sub-rows for Status, First In, Last Out, Total Hrs
           let statusRow = null;
           let firstInRow = null;
           let lastOutRow = null;
@@ -603,7 +613,7 @@ export default function App() {
               .map((x) => String(x || "").toLowerCase().trim())
               .join(" ");
 
-            if (/emp\s*id\s*:/i.test(labelZone)) break; // next employee arrived
+            if (/emp\s*id\s*:/i.test(labelZone)) break; // next employee started
 
             if (!statusRow && labelZone.includes("status")) {
               statusRow = subRow;
@@ -626,7 +636,7 @@ export default function App() {
             const rawOut = lastOutRow ? String(lastOutRow[col] || "").trim() : "";
             const rawHrs = totalHrsRow ? String(totalHrsRow[col] || "").trim() : "";
 
-            const isSunday = sundayColIndices.includes(d);
+            const isSunday = sundayIndices.includes(d);
             const inDec = parseTimeToHours(rawIn);
             const outDec = parseTimeToHours(rawOut);
             let totDec = parseDurationHours(rawHrs);
@@ -635,7 +645,7 @@ export default function App() {
               totDec = Number((outDec - inDec).toFixed(2));
             }
 
-            // Normalization of status
+            // Normalization
             let finalStatus = "A";
             const sUpper = rawStatus.toUpperCase();
 
@@ -677,32 +687,31 @@ export default function App() {
       }
 
       if (parsedRecords.length === 0) {
-        throw new Error("No employee punch blocks with 'Emp ID :' were identified in the file.");
+        throw new Error("No employee attendance records could be located in the sheet.");
       }
 
-      // Sort naturally
-      parsedRecords.sort((a, b) => parseInt(a.empId, 10) - parseInt(b.empId, 10));
+      parsedRecords.sort((a, b) => parseInt(a.empId, 10) - parseInt(b.empId, 10) || a.empId.localeCompare(b.empId));
 
       const newMeta = {
         fileName: file.name,
         fromDate: fromDateStr,
         toDate: toDateStr || `${detectedTotalDays}/Month`,
         totalDays: detectedTotalDays,
-        sundaysCount: sundayColIndices.length,
+        sundaysCount: sundayIndices.length,
         processedAt: new Date().toLocaleTimeString()
       };
 
       setMetaInfo(newMeta);
       setAttendanceRecords(parsedRecords);
 
-      const payroll = runPayrollEngine(parsedRecords, master, newMeta);
+      const payroll = calculatePayroll(parsedRecords, master, newMeta);
       setPayrollBreakdown(payroll);
 
-      logs.push(`Successfully loaded ${parsedRecords.length} employees for ${detectedTotalDays} days.`);
+      logs.push(`Successfully parsed ${parsedRecords.length} staff records (${detectedTotalDays} days).`);
       setParseLogs(logs);
       setActiveTab("dashboard");
     } catch (err) {
-      logs.push(`Error: ${err.message}`);
+      logs.push(`Parsing Error: ${err.message}`);
       setParseLogs(logs);
     } finally {
       setIsProcessing(false);
@@ -710,15 +719,15 @@ export default function App() {
   };
 
   // =========================================================================
-  // 5. TEST GENERATOR (INSTANT 1-CLICK DEMO LOADER)
+  // 4. SYNTHETIC REALISTIC DATA GENERATOR (1-CLICK INSTANT TEST)
   // =========================================================================
-  const loadInstantFactoryDemo = () => {
+  const loadSyntheticDataset = () => {
     setIsProcessing(true);
     const totalDays = 30;
-    const sundays = [5, 12, 19, 26]; // 1-indexed days
+    const sundays = [6, 13, 20, 27]; // Sept 2026 Sundays
 
     const sampleAttendance = master.map((emp) => {
-      const isDayWorker = emp.dutyHours <= 0;
+      const isDayWorker = Number(emp.dutyHours) <= 0;
       const days = [];
 
       for (let d = 1; d <= totalDays; d++) {
@@ -729,8 +738,7 @@ export default function App() {
         let hrs = isDayWorker ? 9.5 : emp.dutyHours;
 
         if (isSunday) {
-          // Some worked Sunday OT, some off
-          if (d === 12 && parseInt(emp.empId, 10) % 3 === 0) {
+          if (d === 13 && parseInt(emp.empId, 10) % 3 === 0) {
             status = "PW";
             hrs = 8.5;
             inTime = "09:00";
@@ -742,13 +750,12 @@ export default function App() {
             outTime = "--";
           }
         } else {
-          // Standard month punches
-          if (d === 7 && parseInt(emp.empId, 10) % 4 === 0) {
+          if (d === 8 && parseInt(emp.empId, 10) % 5 === 0) {
             status = "A";
             hrs = 0;
             inTime = "--";
             outTime = "--";
-          } else if (d === 18 && parseInt(emp.empId, 10) % 5 === 0) {
+          } else if (d === 18 && parseInt(emp.empId, 10) % 7 === 0) {
             status = "HD";
             hrs = Math.max(0, hrs / 2);
             outTime = "14:00";
@@ -776,9 +783,9 @@ export default function App() {
     });
 
     const meta = {
-      fileName: "FACTORY_SYNTHETIC_APRIL_2026.xlsx",
-      fromDate: "01/04/2026",
-      toDate: "30/04/2026",
+      fileName: "SYNTHETIC_SEPTEMBER_2026.xlsx",
+      fromDate: "01/09/2026",
+      toDate: "30/09/2026",
       totalDays: 30,
       sundaysCount: 4,
       processedAt: new Date().toLocaleTimeString()
@@ -786,45 +793,161 @@ export default function App() {
 
     setAttendanceRecords(sampleAttendance);
     setMetaInfo(meta);
-    const payroll = runPayrollEngine(sampleAttendance, master, meta);
+    const payroll = calculatePayroll(sampleAttendance, master, meta);
     setPayrollBreakdown(payroll);
-    setParseLogs(["Instant factory demonstration dataset loaded successfully!"]);
+    setParseLogs(["Synthetic 30-day payroll & attendance loaded with all 75+ employees!"]);
     setIsProcessing(false);
   };
 
-  // Initialize with demo if not loaded yet
   useEffect(() => {
     if (attendanceRecords.length === 0) {
-      loadInstantFactoryDemo();
+      loadSyntheticDataset();
     }
   }, []);
 
   // =========================================================================
-  // 6. EXPORTING COMPLETE PAYROLL TO EXCEL VIA SHEETJS
+  // 5. BULK MASTER UPLOAD & EXPORT HANDLERS
   // =========================================================================
+  const handleBulkMasterUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      try {
+        const wb = XLSX.read(evt.target.result, { type: "binary" });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const json = XLSX.utils.sheet_to_json(ws);
+
+        if (!json.length) {
+          alert("The uploaded master sheet contains no rows.");
+          return;
+        }
+
+        const cleanedRows = json.map((r) => {
+          const rawId = cleanId(r["Emp ID"] || r.empId || r.ID || r["Employee ID"]);
+          const rawName = String(r["Employee Name"] || r.name || r.Name || "").trim();
+          const rawDuty = Number(r["Duty Hours"] ?? r.dutyHours ?? 9.5);
+          const rawSal = Number(String(r["Monthly Salary"] ?? r.salary ?? 15000).replace(/[₹,]/g, ""));
+          const rawTiffin = String(r["Own Tiffin"] ?? r.ownTiffin ?? "No").trim();
+          const rawBonus = String(r["Bonus Days"] ?? r.bonusDays ?? "Yes").trim();
+          const rawActive = String(r["Active"] ?? r.active ?? "Yes").trim();
+          const rawNotes = String(r["Notes"] ?? r.notes ?? "").trim();
+
+          return {
+            empId: rawId,
+            name: rawName.toUpperCase(),
+            dutyHours: isNaN(rawDuty) ? 9.5 : rawDuty,
+            salary: isNaN(rawSal) ? 0 : rawSal,
+            ownTiffin: rawTiffin.toLowerCase() === "yes" ? "Yes" : "No",
+            bonusDays: rawBonus.toLowerCase() === "no" ? "No" : "Yes",
+            active: rawActive.toLowerCase() === "no" ? "No" : "Yes",
+            notes: rawNotes
+          };
+        }).filter((x) => x.empId && x.name);
+
+        if (!cleanedRows.length) {
+          alert("No valid employee entries found. Verify columns: 'Emp ID', 'Employee Name', 'Duty Hours', 'Monthly Salary'.");
+          return;
+        }
+
+        // Merge updated records into master
+        setMaster((prev) => {
+          const map = new Map(prev.map((item) => [cleanId(item.empId), item]));
+          cleanedRows.forEach((row) => map.set(cleanId(row.empId), row));
+          const merged = Array.from(map.values()).sort(
+            (a, b) => parseInt(a.empId, 10) - parseInt(b.empId, 10) || a.empId.localeCompare(b.empId)
+          );
+          localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(merged));
+          return merged;
+        });
+
+        alert(`Successfully imported / merged ${cleanedRows.length} employees into Master!`);
+      } catch (err) {
+        alert("Failed to parse Master file: " + err.message);
+      }
+    };
+    reader.readAsBinaryString(file);
+    e.target.value = "";
+  };
+
+  const handleDownloadMasterTemplate = () => {
+    const templateData = master.slice(0, 10).map((m) => ({
+      "Emp ID": m.empId,
+      "Employee Name": m.name,
+      "Duty Hours": m.dutyHours,
+      "Monthly Salary": m.salary,
+      "Own Tiffin": m.ownTiffin,
+      "Bonus Days": m.bonusDays,
+      "Active": m.active,
+      "Notes": m.notes || "Standard"
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(templateData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Master_Template");
+    XLSX.writeFile(wb, "Employee_Master_Template.xlsx");
+  };
+
+  const handleResetMaster = () => {
+    if (window.confirm("Restore factory default roster (75+ employees)? Any unsaved additions will be overwritten.")) {
+      setMaster(INITIAL_MASTER);
+      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(INITIAL_MASTER));
+    }
+  };
+
+  const handleSaveSingleEmp = (emp) => {
+    const targetId = cleanId(emp.empId);
+    if (!targetId || !emp.name) {
+      alert("Employee ID and Name are required.");
+      return;
+    }
+
+    if (editingEmp) {
+      setMaster((prev) =>
+        prev.map((item) => (cleanId(item.empId) === cleanId(editingEmp.empId) ? emp : item))
+      );
+    } else {
+      if (master.some((item) => cleanId(item.empId) === targetId)) {
+        alert(`Employee with ID "${targetId}" already exists!`);
+        return;
+      }
+      setMaster((prev) => [...prev, emp]);
+    }
+    setIsEmpModalOpen(false);
+    setEditingEmp(null);
+  };
+
+  const handleDeleteEmp = (id) => {
+    if (window.confirm(`Delete Employee ID: ${id} from Master?`)) {
+      setMaster((prev) => prev.filter((m) => cleanId(m.empId) !== cleanId(id)));
+    }
+  };
+
+  // Export Complete Payroll to Excel
   const exportPayrollToExcel = () => {
     if (!payrollBreakdown.length) return;
 
     const exportRows = payrollBreakdown
-      .filter((row) => (hideInactive ? row.isActive : true))
+      .filter((row) => (showInactive ? true : row.isActive))
       .map((r) => ({
         "Emp ID": r.empId,
         "Employee Name": r.name,
         "Status": r.isActive ? "ACTIVE" : "INACTIVE",
-        "Category": r.isDayWorker ? "Day Worker (Daily Rate)" : "Duty Worker",
+        "Category": r.isDayWorker ? "Day Worker" : "Duty Worker",
         "Duty Hrs": r.dutyHours,
         "Effective Duty": r.effectiveDuty,
         "Monthly Salary (₹)": r.monthlySalary,
         "Daily Rate (₹)": Math.round(r.dailySalary),
         "Hourly Rate (₹)": Number(r.hourlyRate.toFixed(2)),
-        "Normal Present Days": r.normalPresent,
+        "Normal Present Days": r.normalPresentDays,
         "Absent Days": r.absentDays,
         "Sunday OT Days": r.sundayExtraDays,
         "Punch Actual Hrs": Number(r.actualTotalHours.toFixed(2)),
         "Required Hrs": Number(r.requiredHours.toFixed(2)),
         "Short Hrs": r.shortHours,
         "Extra Hrs": r.extraHours,
-        "Bonus Days": r.bonusDaysCount,
+        "Bonus Days": r.bonusDays,
         "Absent Ded (₹)": Math.round(r.absentDeduction),
         "Short Hrs Ded (₹)": Math.round(r.shortHourDeduction),
         "Extra Hrs Pay (₹)": Math.round(r.extraHourSalary),
@@ -832,20 +955,19 @@ export default function App() {
         "Bonus Pay (₹)": Math.round(r.bonusDaySalary),
         "Adjustment (AD) (₹)": Math.round(r.totalAdjustment),
         "NET PAYABLE (₹)": r.netSalary,
-        "Remarks / Audit": r.remarks
+        "Remarks": r.remarks
       }));
 
     const ws = XLSX.utils.json_to_sheet(exportRows);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Payroll_Calculation");
-    XLSX.writeFile(wb, `Industrial_Payroll_${metaInfo.totalDays}Days_${metaInfo.fileName.replace(/\.xlsx?/i, "")}.xlsx`);
+    XLSX.utils.book_append_sheet(wb, ws, "Payroll_Report");
+    XLSX.writeFile(wb, `Payroll_Summary_${metaInfo.totalDays}Days_${metaInfo.fileName.replace(/\.xlsx?/i, "")}.xlsx`);
   };
 
   // =========================================================================
-  // 7. KPI AGGREGATIONS (RESPECTING INACTIVE FILTERING STRICTLY)
+  // 6. COMPUTED AGGREGATIONS (KPIs STRICTLY RESPECT INACTIVE EXCLUSION)
   // =========================================================================
   const kpiStats = useMemo(() => {
-    // Only ACTIVE employees count towards financials & metrics
     const activeRows = payrollBreakdown.filter((p) => p.isActive);
 
     const totalActiveEmp = activeRows.length;
@@ -876,27 +998,33 @@ export default function App() {
     };
   }, [payrollBreakdown]);
 
-  // Filtered Payroll View
+  // Filters for tables
   const displayedPayroll = useMemo(() => {
     return payrollBreakdown.filter((r) => {
-      if (hideInactive && !r.isActive) return false;
+      if (!showInactive && !r.isActive) return false;
       if (!searchQuery) return true;
       const q = searchQuery.toLowerCase();
-      return (
-        r.empId.toLowerCase().includes(q) ||
-        r.name.toLowerCase().includes(q) ||
-        r.remarks.toLowerCase().includes(q)
-      );
+      return r.empId.toLowerCase().includes(q) || r.name.toLowerCase().includes(q) || r.remarks.toLowerCase().includes(q);
     });
-  }, [payrollBreakdown, hideInactive, searchQuery]);
+  }, [payrollBreakdown, showInactive, searchQuery]);
 
-  // Filtered Attendance Daily Punches
+  const displayedMaster = useMemo(() => {
+    return [...master]
+      .filter((m) => {
+        if (!showInactive && String(m.active).toLowerCase() === "no") return false;
+        if (!searchQuery) return true;
+        const q = searchQuery.toLowerCase();
+        return m.empId.toLowerCase().includes(q) || m.name.toLowerCase().includes(q);
+      })
+      .sort((a, b) => parseInt(a.empId, 10) - parseInt(b.empId, 10) || a.empId.localeCompare(b.empId));
+  }, [master, showInactive, searchQuery]);
+
   const flattenedAttendance = useMemo(() => {
     const list = [];
     attendanceRecords.forEach((emp) => {
       const profile = master.find((m) => cleanId(m.empId) === cleanId(emp.empId));
-      const isActive = profile ? profile.active === "Yes" : true;
-      if (hideInactive && !isActive) return;
+      const isActive = profile ? String(profile.active).toLowerCase() === "yes" : true;
+      if (!showInactive && !isActive) return;
 
       emp.days.forEach((d) => {
         list.push({
@@ -908,7 +1036,7 @@ export default function App() {
       });
     });
     return list;
-  }, [attendanceRecords, master, hideInactive]);
+  }, [attendanceRecords, master, showInactive]);
 
   const displayedAttendance = useMemo(() => {
     return flattenedAttendance.filter((rec) => {
@@ -918,79 +1046,20 @@ export default function App() {
         rec.empId.toLowerCase().includes(searchQuery.toLowerCase()) ||
         `Day ${rec.dayIndex}`.toLowerCase().includes(searchQuery.toLowerCase());
 
-      const matchStatus =
-        attendanceFilter === "ALL" ? true : rec.evaluatedStatus === attendanceFilter;
-
+      const matchStatus = attendanceFilter === "ALL" ? true : rec.evaluatedStatus === attendanceFilter;
       return matchSearch && matchStatus;
     });
   }, [flattenedAttendance, searchQuery, attendanceFilter]);
 
-  // Master Table Filter
-  const displayedMaster = useMemo(() => {
-    return [...master]
-      .filter((m) => {
-        if (hideInactive && m.active === "No") return false;
-        if (!searchQuery) return true;
-        const q = searchQuery.toLowerCase();
-        return m.empId.toLowerCase().includes(q) || m.name.toLowerCase().includes(q);
-      })
-      .sort((a, b) => parseInt(a.empId, 10) - parseInt(b.empId, 10));
-  }, [master, hideInactive, searchQuery]);
-
-  // =========================================================================
-  // 8. CRUD ACTIONS FOR EMPLOYEE MASTER
-  // =========================================================================
-  const handleSaveEmployee = (emp) => {
-    const targetId = cleanId(emp.empId);
-    if (!targetId || !emp.name) {
-      alert("Employee ID and Name are required.");
-      return;
-    }
-
-    if (editingEmp) {
-      setMaster((prev) =>
-        prev.map((item) => (cleanId(item.empId) === cleanId(editingEmp.empId) ? emp : item))
-      );
-    } else {
-      const exists = master.some((item) => cleanId(item.empId) === targetId);
-      if (exists) {
-        alert(`Employee with ID "${targetId}" already exists!`);
-        return;
-      }
-      setMaster((prev) => [...prev, emp]);
-    }
-    setIsModalOpen(false);
-    setEditingEmp(null);
-  };
-
-  const handleDeleteEmployee = (id) => {
-    if (window.confirm(`Delete Employee ID: ${id} from Master?`)) {
-      setMaster((prev) => prev.filter((m) => cleanId(m.empId) !== cleanId(id)));
-    }
-  };
-
-  const handleResetToFactoryMaster = () => {
-    if (
-      window.confirm(
-        "Reset the entire Employee Master to factory defaults (44 preloaded employees)? Any manual edits will be overwritten."
-      )
-    ) {
-      setMaster(FACTORY_EMPLOYEE_MASTER);
-      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(FACTORY_EMPLOYEE_MASTER));
-    }
-  };
-
   return (
-    <div className="min-h-screen bg-[#07090E] text-slate-100 font-sans selection:bg-indigo-500 selection:text-white flex flex-col relative overflow-x-hidden">
-      {/* Background Radial Glow Effects */}
-      <div className="fixed top-0 left-1/4 w-[600px] h-[400px] bg-indigo-600/10 rounded-full blur-[130px] pointer-events-none -z-10" />
-      <div className="fixed bottom-10 right-10 w-[500px] h-[400px] bg-emerald-600/10 rounded-full blur-[140px] pointer-events-none -z-10" />
-      <div className="fixed top-1/2 right-1/4 w-[400px] h-[300px] bg-violet-600/10 rounded-full blur-[120px] pointer-events-none -z-10" />
+    <div className="min-h-screen bg-[#0B0F19] text-slate-100 font-sans selection:bg-indigo-500 selection:text-white flex flex-col relative overflow-x-hidden">
+      {/* Background Cyber Glowing Orbs */}
+      <div className="fixed top-0 left-1/4 w-[650px] h-[400px] bg-indigo-600/10 rounded-full blur-[140px] pointer-events-none -z-10" />
+      <div className="fixed bottom-10 right-10 w-[550px] h-[450px] bg-emerald-600/10 rounded-full blur-[150px] pointer-events-none -z-10" />
+      <div className="fixed top-1/2 right-1/4 w-[450px] h-[350px] bg-amber-600/10 rounded-full blur-[130px] pointer-events-none -z-10" />
 
-      {/* ========================================================================= */}
-      {/* HEADER BAR */}
-      {/* ========================================================================= */}
-      <header className="sticky top-0 z-40 bg-[#0B0F19]/80 backdrop-blur-xl border-b border-slate-800/80 px-4 sm:px-8 py-3.5 flex flex-wrap items-center justify-between gap-4 shadow-2xl">
+      {/* TOP HEADER */}
+      <header className="sticky top-0 z-40 bg-[#0B0F19]/85 backdrop-blur-xl border-b border-slate-800/80 px-4 sm:px-8 py-3.5 flex flex-wrap items-center justify-between gap-4 shadow-2xl">
         <div className="flex items-center space-x-3">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 via-violet-600 to-cyan-400 p-[1px] shadow-lg shadow-indigo-500/20">
             <div className="w-full h-full bg-[#0B0F19] rounded-[11px] flex items-center justify-center">
@@ -1000,34 +1069,31 @@ export default function App() {
           <div>
             <div className="flex items-center gap-2">
               <h1 className="font-extrabold tracking-tight text-white text-base sm:text-lg">
-                PUNCH<span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-400">PAY</span> PRO
+                PUNCH<span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-400">PAY</span> CYBER-PRO
               </h1>
               <span className="text-[10px] font-mono uppercase bg-indigo-500/10 text-indigo-300 border border-indigo-500/30 px-2 py-0.5 rounded-full font-bold flex items-center gap-1">
-                <ShieldCheck className="w-3 h-3 text-emerald-400" /> v2.6 Industrial
+                <ShieldCheck className="w-3 h-3 text-emerald-400" /> 75+ Staff Roster
               </span>
             </div>
             <p className="text-[11px] text-slate-400 flex items-center gap-1.5">
               <span>{metaInfo.fileName}</span>
               <span className="w-1 h-1 rounded-full bg-slate-600" />
-              <span>Range: {metaInfo.fromDate} - {metaInfo.toDate}</span>
+              <span>{metaInfo.fromDate} - {metaInfo.toDate}</span>
               <span className="w-1 h-1 rounded-full bg-slate-600" />
               <span className="text-emerald-400 font-medium">{metaInfo.totalDays} Days ({metaInfo.sundaysCount} Sundays)</span>
             </p>
           </div>
         </div>
 
-        {/* Action Controls & Navigation Pills */}
         <div className="flex items-center gap-2.5">
-          {/* Quick Demo Re-loader */}
           <button
-            onClick={loadInstantFactoryDemo}
+            onClick={loadSyntheticDataset}
             title="Reload Synthetic Test Data"
             className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700/80 text-xs text-slate-300 hover:text-white border border-slate-700/70 transition shadow-sm"
           >
-            <Sparkles className="w-3.5 h-3.5 text-amber-400" /> Demo Data
+            <Sparkles className="w-3.5 h-3.5 text-amber-400" /> 1-Click Demo
           </button>
 
-          {/* Export Full Excel */}
           <button
             onClick={exportPayrollToExcel}
             className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-medium text-xs shadow-lg shadow-emerald-700/20 transition-all hover:scale-[1.02]"
@@ -1037,16 +1103,14 @@ export default function App() {
         </div>
       </header>
 
-      {/* ========================================================================= */}
-      {/* SECONDARY NAVIGATION TABS & FILTER BAR */}
-      {/* ========================================================================= */}
+      {/* SECONDARY NAVIGATION & CONTROLS */}
       <div className="border-b border-slate-800/80 bg-[#0B0F19]/40 backdrop-blur-md px-4 sm:px-8 py-2.5 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-900/80 border border-slate-800">
           {[
-            { id: "dashboard", label: "KPI Dashboard", icon: TrendingUp },
-            { id: "salary", label: "Salary Calculation Sheet", icon: DollarSign },
-            { id: "attendance", label: "Daily Punch Inspector", icon: Calendar },
-            { id: "master", label: "Employee Master (44)", icon: Users },
+            { id: "dashboard", label: "Dashboard", icon: TrendingUp },
+            { id: "salary", label: "Salary Breakdown", icon: DollarSign },
+            { id: "attendance", label: "Daily Punches", icon: Calendar },
+            { id: "master", label: `Master Roster (${master.length})`, icon: Users },
             { id: "upload", label: "Biometric Uploader", icon: Upload }
           ].map((tab) => {
             const Icon = tab.icon;
@@ -1068,22 +1132,21 @@ export default function App() {
           })}
         </div>
 
-        {/* Global Controls: Search & Inactive Switch */}
         <div className="flex items-center gap-3">
-          {/* Hide Inactive Toggle */}
+          {/* Show / Hide Inactive Employees Toggle */}
           <button
-            onClick={() => setHideInactive(!hideInactive)}
+            onClick={() => setShowInactive(!showInactive)}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition ${
-              hideInactive
-                ? "bg-indigo-500/10 text-indigo-300 border-indigo-500/30"
-                : "bg-slate-800 text-slate-400 border-slate-700"
+              showInactive
+                ? "bg-amber-500/10 text-amber-300 border-amber-500/30"
+                : "bg-slate-800/80 text-slate-400 border-slate-700/80 hover:text-slate-200"
             }`}
           >
-            {hideInactive ? <EyeOff className="w-3.5 h-3.5 text-indigo-400" /> : <Eye className="w-3.5 h-3.5" />}
-            <span>Hide Inactive ({master.filter((m) => m.active === "No").length})</span>
+            {showInactive ? <Eye className="w-3.5 h-3.5 text-amber-400" /> : <EyeOff className="w-3.5 h-3.5 text-slate-400" />}
+            <span>Show Inactive ({master.filter((m) => String(m.active).toLowerCase() === "no").length})</span>
           </button>
 
-          {/* Search Box */}
+          {/* Search Bar */}
           <div className="relative">
             <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-500" />
             <input
@@ -1094,10 +1157,7 @@ export default function App() {
               className="pl-8 pr-3 py-1.5 text-xs bg-slate-900/90 border border-slate-700/70 rounded-lg text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 w-44 sm:w-56"
             />
             {searchQuery && (
-              <button
-                onClick={() => setSearchQuery("")}
-                className="absolute right-2.5 top-2 text-slate-400 hover:text-slate-200"
-              >
+              <button onClick={() => setSearchQuery("")} className="absolute right-2.5 top-2 text-slate-400 hover:text-slate-200">
                 <X className="w-3.5 h-3.5" />
               </button>
             )}
@@ -1105,35 +1165,29 @@ export default function App() {
         </div>
       </div>
 
-      {/* ========================================================================= */}
-      {/* MAIN CONTENT AREA */}
-      {/* ========================================================================= */}
+      {/* MAIN CONTAINER */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
-        {/* PARSE / ERROR LOG BANNER */}
+        {/* PARSE / DIAGNOSTIC BANNER */}
         {parseLogs.length > 0 && (
           <div className="p-3 bg-indigo-950/40 border border-indigo-800/60 rounded-xl text-xs text-indigo-200 flex items-center justify-between shadow-lg">
             <div className="flex items-center gap-2">
               <Activity className="w-4 h-4 text-indigo-400 flex-shrink-0 animate-pulse" />
               <span>{parseLogs[parseLogs.length - 1]}</span>
             </div>
-            <button
-              onClick={() => setParseLogs([])}
-              className="text-slate-400 hover:text-white text-[11px] underline ml-4"
-            >
+            <button onClick={() => setParseLogs([])} className="text-slate-400 hover:text-white text-[11px] underline ml-4">
               Dismiss
             </button>
           </div>
         )}
 
         {/* ========================================================================= */}
-        {/* TAB 1: KPI DASHBOARD */}
+        {/* TAB 1: DASHBOARD */}
         {/* ========================================================================= */}
         {activeTab === "dashboard" && (
           <div className="space-y-6">
-            {/* Top Stat Glow Cards */}
+            {/* Top 4 Primary KPI Cards */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {/* Total Active Payroll */}
-              <div className="p-4 rounded-2xl bg-slate-900/60 backdrop-blur-xl border border-slate-800/80 hover:border-emerald-500/50 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-emerald-500/10 group">
+              <div className="p-4 rounded-2xl bg-slate-900/70 backdrop-blur-xl border border-slate-800/80 hover:border-emerald-500/50 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-emerald-500/10 group">
                 <div className="flex items-center justify-between text-xs font-semibold text-slate-400">
                   <span>Net Payable Payroll</span>
                   <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-400 group-hover:scale-110 transition">
@@ -1145,33 +1199,38 @@ export default function App() {
                 </div>
                 <div className="mt-1 text-[11px] text-slate-400 flex items-center justify-between">
                   <span>Base: {formatINR(kpiStats.totalBase)}</span>
-                  <span className="text-emerald-400 font-medium">Active Staff Only</span>
+                  <span className="text-emerald-400 font-medium">Active Only</span>
                 </div>
               </div>
 
-              {/* Total Adjustments */}
-              <div className="p-4 rounded-2xl bg-slate-900/60 backdrop-blur-xl border border-slate-800/80 hover:border-cyan-500/50 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-cyan-500/10 group">
+              <div className="p-4 rounded-2xl bg-slate-900/70 backdrop-blur-xl border border-slate-800/80 hover:border-blue-500/50 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-blue-500/10 group">
                 <div className="flex items-center justify-between text-xs font-semibold text-slate-400">
-                  <span>Net Total Adjustments (AD)</span>
-                  <div className="p-2 rounded-xl bg-cyan-500/10 text-cyan-400 group-hover:scale-110 transition">
+                  <span>Net Total Adjustment (AD)</span>
+                  <div className="p-2 rounded-xl bg-blue-500/10 text-blue-400 group-hover:scale-110 transition">
                     <Award className="w-4 h-4" />
                   </div>
                 </div>
-                <div
-                  className={`mt-2 text-2xl sm:text-3xl font-extrabold font-mono ${
-                    kpiStats.totalAdjustment >= 0 ? "text-cyan-400" : "text-rose-400"
-                  }`}
-                >
+                <div className={`mt-2 text-2xl sm:text-3xl font-extrabold font-mono ${kpiStats.totalAdjustment >= 0 ? "text-blue-400" : "text-rose-400"}`}>
                   {kpiStats.totalAdjustment >= 0 ? "+" : ""}
                   {formatINR(kpiStats.totalAdjustment)}
                 </div>
-                <div className="mt-1 text-[11px] text-slate-400">
-                  Bonus + OT Pay - Short Deductions
-                </div>
+                <div className="mt-1 text-[11px] text-slate-400">Bonus + OT - Short Ded</div>
               </div>
 
-              {/* Active Employees */}
-              <div className="p-4 rounded-2xl bg-slate-900/60 backdrop-blur-xl border border-slate-800/80 hover:border-indigo-500/50 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-indigo-500/10 group">
+              <div className="p-4 rounded-2xl bg-slate-900/70 backdrop-blur-xl border border-slate-800/80 hover:border-amber-500/50 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-amber-500/10 group">
+                <div className="flex items-center justify-between text-xs font-semibold text-slate-400">
+                  <span>Total Bonus Paid</span>
+                  <div className="p-2 rounded-xl bg-amber-500/10 text-amber-400 group-hover:scale-110 transition">
+                    <Award className="w-4 h-4" />
+                  </div>
+                </div>
+                <div className="mt-2 text-2xl sm:text-3xl font-extrabold text-amber-400 font-mono">
+                  {formatINR(kpiStats.totalBonusPay)}
+                </div>
+                <div className="mt-1 text-[11px] text-slate-400">23+ Present Days Tier</div>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-slate-900/70 backdrop-blur-xl border border-slate-800/80 hover:border-indigo-500/50 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-indigo-500/10 group">
                 <div className="flex items-center justify-between text-xs font-semibold text-slate-400">
                   <span>Active Headcount</span>
                   <div className="p-2 rounded-xl bg-indigo-500/10 text-indigo-400 group-hover:scale-110 transition">
@@ -1180,67 +1239,771 @@ export default function App() {
                 </div>
                 <div className="mt-2 text-2xl sm:text-3xl font-extrabold text-white font-mono">
                   {kpiStats.totalActiveEmp}{" "}
-                  <span className="text-xs text-slate-400 font-sans font-normal">
-                    / {master.length} roster
-                  </span>
+                  <span className="text-xs text-slate-400 font-sans font-normal">/ {master.length} in Roster</span>
                 </div>
                 <div className="mt-1 text-[11px] text-slate-400">
-                  {kpiStats.totalMonthlyWorkers} Duty Staff | {kpiStats.totalDayWorkers} Day Workers
-                </div>
-              </div>
-
-              {/* Sunday Extra Days */}
-              <div className="p-4 rounded-2xl bg-slate-900/60 backdrop-blur-xl border border-slate-800/80 hover:border-amber-500/50 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-amber-500/10 group">
-                <div className="flex items-center justify-between text-xs font-semibold text-slate-400">
-                  <span>Sunday OT Days Approved</span>
-                  <div className="p-2 rounded-xl bg-amber-500/10 text-amber-400 group-hover:scale-110 transition">
-                    <Sun className="w-4 h-4" />
-                  </div>
-                </div>
-                <div className="mt-2 text-2xl sm:text-3xl font-extrabold text-amber-400 font-mono">
-                  {kpiStats.totalSundayOTDays}{" "}
-                  <span className="text-xs text-slate-400 font-sans font-normal">Duty Shifts</span>
-                </div>
-                <div className="mt-1 text-[11px] text-slate-400">
-                  Bonus Pay: {formatINR(kpiStats.totalBonusPay)}
+                  {kpiStats.totalMonthlyWorkers} Duty | {kpiStats.totalDayWorkers} Day Workers
                 </div>
               </div>
             </div>
 
-            {/* Second Row Quick Metrics */}
+            {/* Second Row Metric Summary */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="p-3.5 rounded-xl bg-slate-900/40 border border-slate-800/70 flex items-center justify-between">
+              <div className="p-3.5 rounded-xl bg-slate-900/50 border border-slate-800/70 flex items-center justify-between">
                 <div>
-                  <div className="text-[11px] text-slate-400">Cumulative Absent Days</div>
-                  <div className="text-lg font-bold text-rose-400 font-mono">
-                    {formatDec(kpiStats.totalAbsent, 1)} Days
-                  </div>
+                  <div className="text-[11px] text-slate-400">Sunday Overtime Days</div>
+                  <div className="text-lg font-bold text-amber-400 font-mono">{kpiStats.totalSundayOTDays} Shifts</div>
                 </div>
-                <div className="w-2.5 h-2.5 rounded-full bg-rose-500/80 animate-ping" />
+                <Sun className="w-4 h-4 text-amber-400" />
               </div>
 
-              <div className="p-3.5 rounded-xl bg-slate-900/40 border border-slate-800/70 flex items-center justify-between">
+              <div className="p-3.5 rounded-xl bg-slate-900/50 border border-slate-800/70 flex items-center justify-between">
                 <div>
-                  <div className="text-[11px] text-slate-400">Short Hours Deduction</div>
-                  <div className="text-lg font-bold text-amber-400 font-mono">
-                    {formatDec(kpiStats.totalShortHours, 1)} Hrs
-                  </div>
+                  <div className="text-[11px] text-slate-400">Cumulative Absent Days</div>
+                  <div className="text-lg font-bold text-rose-400 font-mono">{formatDec(kpiStats.totalAbsent, 1)} Days</div>
+                </div>
+                <AlertTriangle className="w-4 h-4 text-rose-400" />
+              </div>
+
+              <div className="p-3.5 rounded-xl bg-slate-900/50 border border-slate-800/70 flex items-center justify-between">
+                <div>
+                  <div className="text-[11px] text-slate-400">Total Short Hours</div>
+                  <div className="text-lg font-bold text-amber-400 font-mono">{formatDec(kpiStats.totalShortHours, 1)} Hrs</div>
                 </div>
                 <Clock className="w-4 h-4 text-amber-400" />
               </div>
 
-              <div className="p-3.5 rounded-xl bg-slate-900/40 border border-slate-800/70 flex items-center justify-between">
+              <div className="p-3.5 rounded-xl bg-slate-900/50 border border-slate-800/70 flex items-center justify-between">
                 <div>
-                  <div className="text-[11px] text-slate-400">Overtime Extra Hours</div>
-                  <div className="text-lg font-bold text-indigo-400 font-mono">
-                    +{formatDec(kpiStats.totalExtraHours, 1)} Hrs
-                  </div>
+                  <div className="text-[11px] text-slate-400">Total Extra Hours</div>
+                  <div className="text-lg font-bold text-indigo-400 font-mono">+{formatDec(kpiStats.totalExtraHours, 1)} Hrs</div>
                 </div>
                 <TrendingUp className="w-4 h-4 text-indigo-400" />
               </div>
+            </div>
 
-              <div className="p-3.5 rounded-xl bg-slate-900/40 border border-slate-800/70 flex items-center justify-between">
+            {/* Quick Preview Table */}
+            <div className="rounded-2xl bg-slate-900/70 backdrop-blur-xl border border-slate-800/80 overflow-hidden shadow-2xl">
+              <div className="p-4 sm:p-5 border-b border-slate-800 flex flex-wrap justify-between items-center gap-3">
                 <div>
-                  <div className="text-[11px] text-slate-400">Attendance Bonus Paid</div>
-                  <div className="text-lg font-bold text-emerald-400 font-mono">
-                    {formatINR(kpiStats.totalBonusPay)}
+                  <h3 className="font-bold text-sm sm:text-base text-white flex items-center gap-2">
+                    <Layers className="w-4 h-4 text-indigo-400" /> Monthly Payroll Summary Preview
+                  </h3>
+                  <p className="text-xs text-slate-400">Live evaluated employee payroll records with precise Bonus Pay calculation.</p>
+                </div>
+                <button
+                  onClick={() => setActiveTab("salary")}
+                  className="text-xs text-indigo-400 hover:text-indigo-300 font-semibold flex items-center gap-1 group"
+                >
+                  <span>Open Full Calculation Sheet</span>
+                  <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition" />
+                </button>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs border-collapse font-mono">
+                  <thead className="bg-slate-950/80 text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-800 font-semibold font-sans">
+                    <tr>
+                      <th className="py-3 px-4">Emp ID</th>
+                      <th className="py-3 px-4">Employee Name</th>
+                      <th className="py-3 px-3">Type</th>
+                      <th className="py-3 px-3 text-right">Base Salary</th>
+                      <th className="py-3 px-3 text-center">P / A Days</th>
+                      <th className="py-3 px-3 text-center text-amber-400">Bonus Pay</th>
+                      <th className="py-3 px-3 text-right">Adjustment (AD)</th>
+                      <th className="py-3 px-4 text-right text-emerald-400 font-bold">NET SALARY</th>
+                      <th className="py-3 px-4 font-sans">Remarks</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800/60">
+                    {displayedPayroll.slice(0, 10).map((row) => (
+                      <tr
+                        key={row.empId}
+                        className={`hover:bg-slate-800/30 transition-colors ${!row.isActive ? "opacity-40 bg-slate-950/40" : ""}`}
+                      >
+                        <td className="py-2.5 px-4 font-bold text-indigo-400">{row.empId}</td>
+                        <td className="py-2.5 px-4 font-sans font-semibold text-slate-200">
+                          {row.name}
+                          {!row.isActive && (
+                            <span className="ml-2 text-[9px] bg-rose-500/20 text-rose-300 px-1.5 py-0.5 rounded border border-rose-500/30">
+                              INACTIVE
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-2.5 px-3 font-sans">
+                          <span
+                            className={`px-2 py-0.5 rounded text-[10px] font-semibold ${
+                              row.isDayWorker
+                                ? "bg-amber-500/10 text-amber-300 border border-amber-500/30"
+                                : "bg-indigo-500/10 text-indigo-300 border border-indigo-500/30"
+                            }`}
+                          >
+                            {row.isDayWorker ? "Day Worker" : `${row.dutyHours}h`}
+                          </span>
+                        </td>
+                        <td className="py-2.5 px-3 text-right text-slate-300">{formatINR(row.monthlySalary)}</td>
+                        <td className="py-2.5 px-3 text-center font-sans">
+                          <span className="text-emerald-400 font-bold">{row.normalPresentDays}</span> /{" "}
+                          <span className="text-rose-400 font-bold">{row.absentDays}</span>
+                        </td>
+                        <td className="py-2.5 px-3 text-center">
+                          {row.bonusDaySalary > 0 ? (
+                            <span className="text-amber-400 font-bold">
+                              +{formatINR(row.bonusDaySalary)} ({row.bonusDays}d)
+                            </span>
+                          ) : (
+                            <span className="text-slate-500 font-mono">₹0</span>
+                          )}
+                        </td>
+                        <td className={`py-2.5 px-3 text-right font-bold ${row.totalAdjustment >= 0 ? "text-blue-400" : "text-rose-400"}`}>
+                          {row.totalAdjustment >= 0 ? "+" : ""}
+                          {formatINR(row.totalAdjustment)}
+                        </td>
+                        <td className="py-2.5 px-4 text-right font-extrabold text-emerald-400 text-sm">
+                          {formatINR(row.netSalary)}
+                        </td>
+                        <td className="py-2.5 px-4 font-sans text-[11px] text-slate-400">{row.remarks}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ========================================================================= */}
+        {/* TAB 2: DETAILED SALARY BREAKDOWN SHEET */}
+        {/* ========================================================================= */}
+        {activeTab === "salary" && (
+          <div className="space-y-4">
+            <div className="rounded-2xl bg-slate-900/70 backdrop-blur-xl border border-slate-800/80 p-4 sm:p-5 flex flex-wrap justify-between items-center gap-3">
+              <div>
+                <h2 className="font-bold text-base text-white flex items-center gap-2">
+                  <DollarSign className="w-5 h-5 text-emerald-400" /> Full Industrial Salary Calculation Sheet
+                </h2>
+                <p className="text-xs text-slate-400">
+                  Strict 30-day divisor applied. Normal present days are maintained without deduction for OT or short hours.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={exportPayrollToExcel}
+                  className="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs flex items-center gap-1.5 shadow-md shadow-emerald-700/20"
+                >
+                  <Download className="w-3.5 h-3.5" /> Export Excel Sheet
+                </button>
+              </div>
+            </div>
+
+            <div className="rounded-2xl bg-slate-900/70 backdrop-blur-xl border border-slate-800/80 overflow-hidden shadow-2xl">
+              <div className="overflow-x-auto max-h-[720px]">
+                <table className="w-full text-left text-xs border-collapse font-mono">
+                  <thead className="sticky top-0 z-20 bg-[#0A0D14] text-slate-300 uppercase text-[10px] tracking-wider border-b border-slate-800 font-bold font-sans">
+                    <tr>
+                      <th className="py-3 px-3">Emp ID</th>
+                      <th className="py-3 px-3">Name</th>
+                      <th className="py-3 px-2">Type</th>
+                      <th className="py-3 px-2 text-right">Base (₹)</th>
+                      <th className="py-3 px-2 text-right">Daily/Hr</th>
+                      <th className="py-3 px-2 text-center text-emerald-400">P Days</th>
+                      <th className="py-3 px-2 text-center text-rose-400">A Days</th>
+                      <th className="py-3 px-2 text-center text-amber-400">Sun OT</th>
+                      <th className="py-3 px-2 text-right">Punch H</th>
+                      <th className="py-3 px-2 text-right">Req H</th>
+                      <th className="py-3 px-2 text-right text-rose-400">Short H</th>
+                      <th className="py-3 px-2 text-right text-indigo-400">Extra H</th>
+                      <th className="py-3 px-2 text-right text-rose-400">Absent Ded</th>
+                      <th className="py-3 px-2 text-right text-rose-400">Short Ded</th>
+                      <th className="py-3 px-2 text-right text-indigo-400">Extra Pay</th>
+                      <th className="py-3 px-2 text-right text-amber-400">Sun Pay</th>
+                      <th className="py-3 px-2 text-center text-amber-300">Bonus Pay</th>
+                      <th className="py-3 px-3 text-right bg-slate-950 text-emerald-400 font-extrabold text-sm">
+                        NET SALARY
+                      </th>
+                      <th className="py-3 px-3 font-sans">Remarks</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800/50">
+                    {displayedPayroll.length === 0 ? (
+                      <tr>
+                        <td colSpan="19" className="text-center py-12 text-slate-500 font-sans">
+                          No matching payroll records found.
+                        </td>
+                      </tr>
+                    ) : (
+                      displayedPayroll.map((emp) => (
+                        <tr
+                          key={emp.empId}
+                          className={`hover:bg-slate-800/30 transition-colors ${!emp.isActive ? "opacity-35 bg-slate-950/60" : ""}`}
+                        >
+                          <td className="py-2 px-3 font-bold text-indigo-400">{emp.empId}</td>
+                          <td className="py-2 px-3 font-sans font-semibold text-slate-200">
+                            {emp.name}
+                            {!emp.isActive && <span className="block text-[9px] text-rose-400 font-mono">INACTIVE (EXCLUDED)</span>}
+                          </td>
+                          <td className="py-2 px-2 font-sans">
+                            <span
+                              className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${
+                                emp.isDayWorker
+                                  ? "bg-amber-500/10 text-amber-300 border border-amber-500/30"
+                                  : "bg-indigo-500/10 text-indigo-300 border border-indigo-500/30"
+                              }`}
+                            >
+                              {emp.isDayWorker ? "Day" : `${emp.dutyHours}h`}
+                            </span>
+                          </td>
+                          <td className="py-2 px-2 text-right text-slate-300">{formatINR(emp.monthlySalary)}</td>
+                          <td className="py-2 px-2 text-right text-[11px] text-slate-400">
+                            {emp.isDayWorker ? `${Math.round(emp.dailySalary)}/d` : `${Math.round(emp.hourlyRate)}/h`}
+                          </td>
+                          <td className="py-2 px-2 text-center text-emerald-400 font-bold">{emp.normalPresentDays}</td>
+                          <td className="py-2 px-2 text-center text-rose-400 font-bold">{emp.absentDays}</td>
+                          <td className="py-2 px-2 text-center text-amber-400 font-bold">
+                            {emp.sundayExtraDays > 0 ? `+${emp.sundayExtraDays}` : "0"}
+                          </td>
+                          <td className="py-2 px-2 text-right text-slate-300">{formatDec(emp.actualTotalHours, 1)}</td>
+                          <td className="py-2 px-2 text-right text-slate-500">{formatDec(emp.requiredHours, 1)}</td>
+                          <td className="py-2 px-2 text-right text-rose-400">{emp.shortHours > 0 ? formatDec(emp.shortHours, 1) : "-"}</td>
+                          <td className="py-2 px-2 text-right text-indigo-400">{emp.extraHours > 0 ? formatDec(emp.extraHours, 1) : "-"}</td>
+                          <td className="py-2 px-2 text-right text-rose-400">
+                            {emp.absentDeduction > 0 ? `-${formatINR(emp.absentDeduction)}` : "-"}
+                          </td>
+                          <td className="py-2 px-2 text-right text-rose-400">
+                            {emp.shortHourDeduction > 0 ? `-${formatINR(emp.shortHourDeduction)}` : "-"}
+                          </td>
+                          <td className="py-2 px-2 text-right text-indigo-400">
+                            {emp.extraHourSalary > 0 ? `+${formatINR(emp.extraHourSalary)}` : "-"}
+                          </td>
+                          <td className="py-2 px-2 text-right text-amber-400">
+                            {emp.sundayExtraSalary > 0 ? `+${formatINR(emp.sundayExtraSalary)}` : "-"}
+                          </td>
+                          <td className="py-2 px-2 text-center">
+                            {emp.bonusDaySalary > 0 ? (
+                              <span className="text-amber-400 font-bold">
+                                +{formatINR(emp.bonusDaySalary)} ({emp.bonusDays}d)
+                              </span>
+                            ) : (
+                              <span className="text-slate-500 font-mono">₹0</span>
+                            )}
+                          </td>
+                          <td className="py-2 px-3 text-right bg-slate-950/80 font-extrabold text-emerald-400 text-sm">
+                            {formatINR(emp.netSalary)}
+                          </td>
+                          <td className="py-2 px-3 font-sans text-[10px] text-slate-400">{emp.remarks}</td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ========================================================================= */}
+        {/* TAB 3: DAILY PUNCH INSPECTOR */}
+        {/* ========================================================================= */}
+        {activeTab === "attendance" && (
+          <div className="space-y-4">
+            <div className="rounded-2xl bg-slate-900/70 backdrop-blur-xl border border-slate-800/80 p-4 sm:p-5 flex flex-wrap justify-between items-center gap-3">
+              <div>
+                <h2 className="font-bold text-base text-white flex items-center gap-2">
+                  <Calendar className="w-5 h-5 text-indigo-400" /> Daily Punch & Biometric Timeline
+                </h2>
+                <p className="text-xs text-slate-400">Inspect Day-by-Day punches across the whole workforce.</p>
+              </div>
+
+              <div className="flex items-center gap-1.5 bg-slate-950/70 p-1 rounded-xl border border-slate-800">
+                {["ALL", "P", "PW", "HD", "A", "W"].map((st) => (
+                  <button
+                    key={st}
+                    onClick={() => setAttendanceFilter(st)}
+                    className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition ${
+                      attendanceFilter === st
+                        ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/30"
+                        : "text-slate-400 hover:text-white"
+                    }`}
+                  >
+                    {st === "ALL" ? "All Punches" : st}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-2xl bg-slate-900/70 backdrop-blur-xl border border-slate-800/80 overflow-hidden shadow-2xl">
+              <div className="overflow-x-auto max-h-[650px]">
+                <table className="w-full text-left text-xs border-collapse font-mono">
+                  <thead className="sticky top-0 z-20 bg-[#0A0D14] text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-800 font-sans font-bold">
+                    <tr>
+                      <th className="py-3 px-4">Day</th>
+                      <th className="py-3 px-3">Emp ID</th>
+                      <th className="py-3 px-4">Employee Name</th>
+                      <th className="py-3 px-3 text-center">Status</th>
+                      <th className="py-3 px-3 text-center">First In</th>
+                      <th className="py-3 px-3 text-center">Last Out</th>
+                      <th className="py-3 px-3 text-right">Hours</th>
+                      <th className="py-3 px-4 text-center">Raw Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800/40">
+                    {displayedAttendance.length === 0 ? (
+                      <tr>
+                        <td colSpan="8" className="text-center py-12 text-slate-500 font-sans">
+                          No matching biometric punches found.
+                        </td>
+                      </tr>
+                    ) : (
+                      displayedAttendance.slice(0, 300).map((row, idx) => (
+                        <tr
+                          key={idx}
+                          className={`hover:bg-slate-800/30 transition-colors ${row.isSunday ? "bg-amber-950/20" : ""}`}
+                        >
+                          <td className="py-2 px-4 font-semibold text-slate-300 font-sans">
+                            Day {row.dayIndex}{" "}
+                            {row.isSunday && (
+                              <span className="text-amber-400 font-bold ml-1 text-[10px] bg-amber-500/10 px-1 py-0.5 rounded border border-amber-500/30">
+                                SUN
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-2 px-3 font-bold text-indigo-400">{row.empId}</td>
+                          <td className="py-2 px-4 font-sans font-semibold text-slate-200">{row.name}</td>
+                          <td className="py-2 px-3 text-center font-sans">
+                            {row.evaluatedStatus === "P" && (
+                              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-300 border border-emerald-500/30">
+                                P
+                              </span>
+                            )}
+                            {row.evaluatedStatus === "PW" && (
+                              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-500/20 text-purple-300 border border-purple-500/40">
+                                PW (Sun OT)
+                              </span>
+                            )}
+                            {row.evaluatedStatus === "HD" && (
+                              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/10 text-amber-300 border border-amber-500/30">
+                                HD
+                              </span>
+                            )}
+                            {row.evaluatedStatus === "A" && (
+                              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-500/10 text-rose-300 border border-rose-500/30">
+                                A
+                              </span>
+                            )}
+                            {row.evaluatedStatus === "W" && (
+                              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-400 border border-slate-700">
+                                W
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-2 px-3 text-center text-slate-300">{row.firstIn}</td>
+                          <td className="py-2 px-3 text-center text-slate-300">{row.lastOut}</td>
+                          <td className="py-2 px-3 text-right font-bold text-slate-200">{formatDec(row.actualHours, 2)}h</td>
+                          <td className="py-2 px-4 text-center text-slate-500 text-[11px]">{row.rawStatus || "-"}</td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ========================================================================= */}
+        {/* TAB 4: EMPLOYEE MASTER (BULK + SINGLE + TEMPLATE + RESET) */}
+        {/* ========================================================================= */}
+        {activeTab === "master" && (
+          <div className="space-y-4">
+            <div className="rounded-2xl bg-slate-900/70 backdrop-blur-xl border border-slate-800/80 p-4 sm:p-5 flex flex-wrap justify-between items-center gap-3">
+              <div>
+                <h2 className="font-bold text-base text-white flex items-center gap-2">
+                  <Users className="w-5 h-5 text-indigo-400" /> Employee Master Roster ({master.length} Total Records)
+                </h2>
+                <p className="text-xs text-slate-400">
+                  Dual-Input: Bulk import spreadsheets or add individual employees. Automatically persists in <code className="text-indigo-300">localStorage</code>.
+                </p>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <input
+                  type="file"
+                  ref={fileMasterInputRef}
+                  onChange={handleBulkMasterUpload}
+                  accept=".xlsx, .xls, .csv"
+                  className="hidden"
+                />
+                <button
+                  onClick={() => fileMasterInputRef.current?.click()}
+                  className="px-3 py-1.5 rounded-lg bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/30 text-xs font-semibold flex items-center gap-1.5 transition"
+                >
+                  <FileUp className="w-3.5 h-3.5" /> Bulk Upload Master
+                </button>
+
+                <button
+                  onClick={handleDownloadMasterTemplate}
+                  className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium border border-slate-700 transition flex items-center gap-1.5"
+                >
+                  <Download className="w-3.5 h-3.5" /> Template
+                </button>
+
+                <button
+                  onClick={handleResetMaster}
+                  className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-medium border border-slate-700 transition flex items-center gap-1.5"
+                >
+                  <RotateCcw className="w-3.5 h-3.5 text-amber-400" /> Reset Factory Roster
+                </button>
+
+                <button
+                  onClick={() => {
+                    setEditingEmp(null);
+                    setIsEmpModalOpen(true);
+                  }}
+                  className="px-3.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-lg shadow-indigo-600/30 flex items-center gap-1.5"
+                >
+                  <Plus className="w-3.5 h-3.5" /> Add Single Employee
+                </button>
+              </div>
+            </div>
+
+            <div className="rounded-2xl bg-slate-900/70 backdrop-blur-xl border border-slate-800/80 overflow-hidden shadow-2xl">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead className="bg-slate-950 text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-800 font-bold">
+                    <tr>
+                      <th className="py-3 px-4">Emp ID</th>
+                      <th className="py-3 px-4">Employee Name</th>
+                      <th className="py-3 px-3">Duty Hours</th>
+                      <th className="py-3 px-3 text-right">Base Salary (₹)</th>
+                      <th className="py-3 px-3 text-center">Own Tiffin (-0.5h)</th>
+                      <th className="py-3 px-3 text-center">Bonus Days</th>
+                      <th className="py-3 px-3 text-center">Active Status</th>
+                      <th className="py-3 px-4 text-center">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800/50">
+                    {displayedMaster.map((emp) => (
+                      <tr
+                        key={emp.empId}
+                        className={`hover:bg-slate-800/30 transition-colors ${
+                          String(emp.active).toLowerCase() === "no" ? "opacity-35 bg-slate-950/40" : ""
+                        }`}
+                      >
+                        <td className="py-2.5 px-4 font-mono font-bold text-indigo-400">{emp.empId}</td>
+                        <td className="py-2.5 px-4 font-semibold text-slate-200">{emp.name}</td>
+                        <td className="py-2.5 px-3">
+                          {Number(emp.dutyHours) <= 0 ? (
+                            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/10 text-amber-300 border border-amber-500/30">
+                              Day Worker (0h)
+                            </span>
+                          ) : (
+                            <span className="font-mono text-slate-300 font-medium">{emp.dutyHours} Hours</span>
+                          )}
+                        </td>
+                        <td className="py-2.5 px-3 text-right font-mono text-slate-200 font-medium">{formatINR(emp.salary)}</td>
+                        <td className="py-2.5 px-3 text-center">
+                          <span
+                            className={`px-2 py-0.5 rounded text-[10px] font-semibold ${
+                              String(emp.ownTiffin).toLowerCase() === "yes"
+                                ? "bg-emerald-500/10 text-emerald-300 border border-emerald-500/30"
+                                : "bg-slate-800 text-slate-400"
+                            }`}
+                          >
+                            {emp.ownTiffin}
+                          </span>
+                        </td>
+                        <td className="py-2.5 px-3 text-center">
+                          <span
+                            className={`px-2 py-0.5 rounded text-[10px] font-semibold ${
+                              String(emp.bonusDays).toLowerCase() === "yes"
+                                ? "bg-indigo-500/10 text-indigo-300 border border-indigo-500/30"
+                                : "bg-slate-800 text-slate-400"
+                            }`}
+                          >
+                            {emp.bonusDays}
+                          </span>
+                        </td>
+                        <td className="py-2.5 px-3 text-center">
+                          <span
+                            className={`px-2 py-0.5 rounded text-[10px] font-semibold ${
+                              String(emp.active).toLowerCase() === "yes"
+                                ? "bg-emerald-500/10 text-emerald-300 border border-emerald-500/30"
+                                : "bg-rose-500/10 text-rose-300 border border-rose-500/30"
+                            }`}
+                          >
+                            {emp.active}
+                          </span>
+                        </td>
+                        <td className="py-2.5 px-4 text-center">
+                          <div className="flex items-center justify-center space-x-2">
+                            <button
+                              onClick={() => {
+                                setEditingEmp(emp);
+                                setIsEmpModalOpen(true);
+                              }}
+                              className="p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-indigo-400 transition"
+                            >
+                              <Edit3 className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteEmp(emp.empId)}
+                              className="p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-rose-400 transition"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ========================================================================= */}
+        {/* TAB 5: UPLOAD & PROCESS BIOMETRIC EXCEL */}
+        {/* ========================================================================= */}
+        {activeTab === "upload" && (
+          <div className="max-w-3xl mx-auto space-y-6">
+            <div className="rounded-2xl bg-slate-900/70 backdrop-blur-xl border border-slate-800/80 p-6 sm:p-8 shadow-2xl">
+              <h2 className="font-bold text-lg text-white flex items-center gap-2">
+                <Upload className="w-5 h-5 text-indigo-400" /> Biometric Attendance Excel Importer
+              </h2>
+              <p className="text-xs text-slate-400 mt-1">
+                Supports merged legacy biometric templates. In raw files, sequence 1..N begins in row 10, column 0 is the label, column 1 is merged/empty, and Day 1 punch starts at column index 2.
+              </p>
+
+              <div
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  if (e.dataTransfer.files?.[0]) parseBiometricWorkbook(e.dataTransfer.files[0]);
+                }}
+                className="mt-6 border-2 border-dashed border-slate-700/80 hover:border-indigo-500/80 rounded-2xl p-10 text-center transition-all bg-slate-950/40 group cursor-pointer"
+              >
+                <div className="w-14 h-14 rounded-2xl bg-indigo-600/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition">
+                  <FileSpreadsheet className="w-7 h-7" />
+                </div>
+                <p className="text-sm font-semibold text-slate-200">Drag & drop biometric monthly report (.xlsx / .xls)</p>
+                <p className="text-xs text-slate-500 mt-1">Zero column shift engine with automated header alignment</p>
+
+                <div className="mt-5">
+                  <label className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-semibold text-xs cursor-pointer shadow-lg shadow-indigo-600/30 transition">
+                    <Upload className="w-4 h-4" /> Select Excel File
+                    <input
+                      type="file"
+                      accept=".xlsx, .xls"
+                      className="hidden"
+                      onChange={(e) => {
+                        if (e.target.files?.[0]) parseBiometricWorkbook(e.target.files[0]);
+                      }}
+                    />
+                  </label>
+                </div>
+              </div>
+
+              <div className="mt-6 pt-5 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-400">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-amber-400" />
+                  <span>Don't have an attendance file on hand?</span>
+                </div>
+                <button
+                  onClick={loadSyntheticDataset}
+                  className="px-3 py-1.5 rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 font-semibold transition"
+                >
+                  Generate 30-Day Test Dataset
+                </button>
+              </div>
+            </div>
+
+            <div className="rounded-2xl bg-slate-900/40 border border-slate-800/80 p-5 text-xs text-slate-400 space-y-2">
+              <h4 className="font-bold text-slate-200 text-sm flex items-center gap-1.5">
+                <ShieldCheck className="w-4 h-4 text-emerald-400" /> Biometric Architecture Highlights
+              </h4>
+              <ul className="list-disc list-inside space-y-1 text-slate-400">
+                <li><strong className="text-slate-300">Bonus Days Logic:</strong> Calculated solely on calendar non-Sunday present days (26+ $\rightarrow$ 3d, 24-25 $\rightarrow$ 2d, 23 $\rightarrow$ 1d).</li>
+                <li><strong className="text-slate-300">Sunday Overtime:</strong> &lt; 8h yields 1 extra day (6.5h deduction); 8–14h yields 2 extra days (12h deduction).</li>
+                <li><strong className="text-slate-300">Exact ID Integrity:</strong> IDs like "1" or "7" are never altered or padded to "101".</li>
+                <li><strong className="text-slate-300">Strict Inactive Exclusion:</strong> Inactive staff contribute ₹0 to all financial summaries and KPIs.</li>
+              </ul>
+            </div>
+          </div>
+        )}
+      </main>
+
+      {/* ========================================================================= */}
+      {/* MODAL: ADD / EDIT EMPLOYEE */}
+      {/* ========================================================================= */}
+      {isEmpModalOpen && (
+        <EmployeeModal
+          initialData={editingEmp}
+          onClose={() => {
+            setIsEmpModalOpen(false);
+            setEditingEmp(null);
+          }}
+          onSave={handleSaveSingleEmp}
+        />
+      )}
+    </div>
+  );
+}
+
+// Modal Component for Single Employee Addition/Edit
+function EmployeeModal({ initialData, onClose, onSave }) {
+  const [formData, setFormData] = useState(
+    initialData || {
+      empId: "",
+      name: "",
+      dutyHours: 9.5,
+      salary: 16000,
+      ownTiffin: "No",
+      bonusDays: "Yes",
+      active: "Yes",
+      notes: ""
+    }
+  );
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-md p-4">
+      <div className="bg-[#0D111D] border border-slate-800 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-150">
+        <div className="p-4 bg-slate-900/90 border-b border-slate-800 flex justify-between items-center">
+          <h3 className="font-bold text-white text-sm">
+            {initialData ? `Edit Employee #${initialData.empId}` : "Add New Employee to Master"}
+          </h3>
+          <button onClick={onClose} className="text-slate-400 hover:text-white">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            onSave({
+              ...formData,
+              dutyHours: Number(formData.dutyHours) || 0,
+              salary: Number(formData.salary) || 0
+            });
+          }}
+          className="p-5 space-y-4 text-xs"
+        >
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-slate-300 font-semibold mb-1">
+                Emp ID <span className="text-rose-500">*</span>
+              </label>
+              <input
+                type="text"
+                required
+                disabled={!!initialData}
+                value={formData.empId}
+                onChange={(e) => setFormData({ ...formData, empId: e.target.value })}
+                placeholder="e.g. 94"
+                className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:opacity-50"
+              />
+            </div>
+            <div>
+              <label className="block text-slate-300 font-semibold mb-1">
+                Full Name <span className="text-rose-500">*</span>
+              </label>
+              <input
+                type="text"
+                required
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value.toUpperCase() })}
+                placeholder="e.g. SURESH KUMAR"
+                className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500 uppercase"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-slate-300 font-semibold mb-1">Duty Hours (0 = Day Worker)</label>
+              <input
+                type="number"
+                step="0.5"
+                min="0"
+                max="24"
+                value={formData.dutyHours}
+                onChange={(e) => setFormData({ ...formData, dutyHours: e.target.value })}
+                className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              />
+            </div>
+            <div>
+              <label className="block text-slate-300 font-semibold mb-1">Monthly Salary (₹)</label>
+              <input
+                type="number"
+                step="500"
+                min="0"
+                value={formData.salary}
+                onChange={(e) => setFormData({ ...formData, salary: e.target.value })}
+                className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-3 gap-3 pt-2">
+            <div>
+              <label className="block text-slate-300 font-semibold mb-1">Own Tiffin</label>
+              <select
+                value={formData.ownTiffin}
+                onChange={(e) => setFormData({ ...formData, ownTiffin: e.target.value })}
+                className="w-full px-2 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              >
+                <option value="No">No</option>
+                <option value="Yes">Yes (-0.5h)</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-slate-300 font-semibold mb-1">Bonus Days</label>
+              <select
+                value={formData.bonusDays}
+                onChange={(e) => setFormData({ ...formData, bonusDays: e.target.value })}
+                className="w-full px-2 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              >
+                <option value="Yes">Yes</option>
+                <option value="No">No</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-slate-300 font-semibold mb-1">Active Status</label>
+              <select
+                value={formData.active}
+                onChange={(e) => setFormData({ ...formData, active: e.target.value })}
+                className="w-full px-2 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              >
+                <option value="Yes">Yes</option>
+                <option value="No">No</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-slate-300 font-semibold mb-1">Notes / Department</label>
+            <input
+              type="text"
+              value={formData.notes || ""}
+              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+              placeholder="e.g. Machine Maintenance"
+              className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            />
+          </div>
+
+          <div className="pt-4 border-t border-slate-800 flex justify-end gap-2">
+            <button type="button" onClick={onClose} className="px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-slate-300 font-medium">
+              Cancel
+            </button>
+            <button type="submit" className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-lg text-white font-semibold shadow-md shadow-indigo-600/30">
+              Save Employee
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
